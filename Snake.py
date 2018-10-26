@@ -7,35 +7,33 @@ class Snake:
         self.window_height = window_height
         self.pixel_size = pixel_size
 
-        self.moves = [[0, -1],  # up
-                      [0, 1],  # down
-                      [-1, 0],  # right
-                      [1, 0]]  # left
-        self.moveDirection = self.moves[0]
+        self.moves = [[-1, 0],  # 0 - left
+                      [0, -1],  # 1 - up
+                      [1, 0],  # 2 - right
+                      [0, 1]]  # 3 - down
+        self.heading_direction = 1
 
         self.head_color = (0, 100, 0)
         self.body_color = (0, 200, 0)
 
         self.head = [init_x, init_y]
         self.body = [[self.head[0], self.head[1] + 1]]
-        # for i in range(3, 97):
+        # Generate snake's body
+        # for i in range(2, 10):
         #     self.body.append([self.head[0], self.head[1] + i])
 
-    def change_direction(self, direction):
-        if direction == self.moves[0] and not self.moveDirection == self.moves[1]:
-            self.moveDirection = direction
-        elif direction == self.moves[1] and not self.moveDirection == self.moves[0]:
-            self.moveDirection = direction
-        elif direction == self.moves[2] and not self.moveDirection == self.moves[3]:
-            self.moveDirection = direction
-        elif direction == self.moves[3] and not self.moveDirection == self.moves[2]:
-            self.moveDirection = direction
+    # Change direction with -1=left | 0=straight | +1=right
+    def change_direction(self, move_direction):
+        self.heading_direction = (self.heading_direction + move_direction) % len(self.moves)
 
+    # Move snake
     def move(self):
         self.body.insert(0, self.head)
         self.body.pop()
-        self.head = [self.head[0] + self.moveDirection[0], self.head[1] + self.moveDirection[1]]
+        self.head = [self.head[0] + self.moves[self.heading_direction][0],
+                     self.head[1] + self.moves[self.heading_direction][1]]
 
+    # Check whether snake collide with the food
     def collision_food(self, food_location):
         if self.head == food_location:
             self.body.insert(-1, self.body[-1])
@@ -43,6 +41,7 @@ class Snake:
         else:
             return False
 
+    # Check whether snake collide with the wall or its body
     def collision_obstacles(self):
         if self.head[0] < 0 or self.head[0] >= self.window_width \
                 or self.head[1] < 0 or self.head[1] >= self.window_height:
@@ -54,9 +53,11 @@ class Snake:
 
         return False
 
+    # Get snake length (head + body)
     def get_length(self):
         return len(self.body) + 1
 
+    # Render snake
     def render(self, win):
         for b in self.body:
             pygame.draw.rect(win, self.body_color,
