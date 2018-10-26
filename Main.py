@@ -2,15 +2,16 @@ import pygame
 from Snake import Snake
 from Food import Food
 
-WINDOW_WIDTH = 20  # 30
-WINDOW_HEIGHT = 20
+WINDOW_WIDTH = 30  # 30
+WINDOW_HEIGHT = 30
 PIXEL_SIZE = 20
+FPS = 10
 
 
 def main():
     window = pygame.display.set_mode((WINDOW_WIDTH * PIXEL_SIZE, WINDOW_HEIGHT * PIXEL_SIZE))
     pygame.display.set_caption("SNAKE GAME")
-    fps = pygame.time.Clock()
+    clock = pygame.time.Clock()
 
     score = 0
     snake = Snake(WINDOW_WIDTH, WINDOW_HEIGHT, PIXEL_SIZE, WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2)
@@ -24,20 +25,12 @@ def main():
                 run = False
                 break
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_UP:
-                    snake.change_direction(snake.moves[0])
-                    break
-                elif event.key == pygame.K_DOWN:
-                    snake.change_direction(snake.moves[1])
-                    break
-                elif event.key == pygame.K_LEFT:
-                    snake.change_direction(snake.moves[2])
+                if event.key == pygame.K_LEFT:
+                    snake.change_direction(-1)
                     break
                 elif event.key == pygame.K_RIGHT:
-                    snake.change_direction(snake.moves[3])
+                    snake.change_direction(+1)
                     break
-
-        window.fill((0, 0, 0))
 
         snake.move()
 
@@ -55,12 +48,12 @@ def main():
             print('win')
             run = False
 
+        window.fill((0, 0, 0))
         food.render(window)
         snake.render(window)
         pygame.display.set_caption("SNAKE GAME | Score: " + str(score))
         pygame.display.update()
-
-        fps.tick(5)
+        clock.tick(FPS)
 
 
 if __name__ == '__main__':
