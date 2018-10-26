@@ -12,6 +12,7 @@ def main():
     pygame.display.set_caption("SNAKE GAME")
     fps = pygame.time.Clock()
 
+    score = 0
     snake = Snake(WINDOW_WIDTH, WINDOW_HEIGHT, PIXEL_SIZE, WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2)
     food = Food(WINDOW_WIDTH, WINDOW_HEIGHT, PIXEL_SIZE)
 
@@ -41,7 +42,7 @@ def main():
         snake.move()
 
         if snake.collision_food(food.location):
-            print('food')
+            score += 1
             food.state = False
 
         food.spawn(snake)
@@ -56,6 +57,7 @@ def main():
 
         food.render(window)
         snake.render(window)
+        pygame.display.set_caption("SNAKE GAME | Score: " + str(score))
         pygame.display.update()
 
         fps.tick(5)

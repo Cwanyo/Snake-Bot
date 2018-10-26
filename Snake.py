@@ -11,6 +11,7 @@ class Snake:
                       [0, 1],  # down
                       [-1, 0],  # right
                       [1, 0]]  # left
+        self.moveDirection = self.moves[0]
 
         self.head_color = (0, 100, 0)
         self.body_color = (0, 200, 0)
@@ -19,8 +20,6 @@ class Snake:
         self.body = [[self.head[0], self.head[1] + 1]]
         # for i in range(3, 97):
         #     self.body.append([self.head[0], self.head[1] + i])
-
-        self.moveDirection = self.moves[0]
 
     def change_direction(self, direction):
         if direction == self.moves[0] and not self.moveDirection == self.moves[1]:
