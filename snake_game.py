@@ -1,6 +1,7 @@
 import pygame
-from Snake import Snake
-from Food import Food
+
+from game.snake import Snake
+from game.food import Food
 
 WINDOW_WIDTH = 30  # 30
 WINDOW_HEIGHT = 30
