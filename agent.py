@@ -7,17 +7,18 @@ import pygame
 from game.snake import Snake
 from game.food import Food
 
-WINDOW_WIDTH = 30  # 30
-WINDOW_HEIGHT = 30
+WINDOW_WIDTH = 20  # 30
+WINDOW_HEIGHT = 20
 PIXEL_SIZE = 20
 
 
 class Agent:
-    def __init__(self, code_id, visualization=False, fps=30):
+    def __init__(self, code_id, log=False, visualization=False, fps=60):
         self.code_id = code_id
         self.snake = Snake(WINDOW_WIDTH, WINDOW_HEIGHT, PIXEL_SIZE, WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2)
         self.food = Food(WINDOW_WIDTH, WINDOW_HEIGHT, PIXEL_SIZE)
 
+        self.log = log
         self.visualization = visualization
         self.window, self.clock = self.init_visualization()
         self.fps = fps
@@ -70,7 +71,7 @@ class Agent:
 
     def next_state(self, move_direction):
         self.step += 1
-        print("CodeID: {} | Step: {} | Score: {}".format(self.code_id, self.step, self.score))
+        info = "CodeID: {} | Step: {} | Score: {}".format(self.code_id, self.step, self.score)
 
         self.snake.change_direction(move_direction)
         self.snake.move()
@@ -82,19 +83,21 @@ class Agent:
         self.food.spawn(self.snake)
 
         if self.snake.collision_obstacles():
-            print(self.code_id, "| Game Over!")
+            info += " >> Game Over!"
             self.alive = False
 
         if self.snake.get_length() == WINDOW_WIDTH * WINDOW_HEIGHT:
-            print(self.code_id, "| Win!")
+            info += " >> Win!"
             self.alive = False
+
+        if self.log:
+            print(info)
 
         if self.visualization:
             self.window.fill((0, 0, 0))
             self.food.render(self.window)
             self.snake.render(self.window)
-            pygame.display.set_caption(
-                "SNAKE GAME | CodeID:{} | Step:{} | Score:{}".format(self.code_id, self.step, self.score))
+            pygame.display.set_caption(info)
             pygame.display.update()
             pygame.event.get()
             self.clock.tick(self.fps)
@@ -152,16 +155,16 @@ class Agent:
 
 # test
 def start_agent(code_id=0):
-    agent = Agent(code_id, True, 150)
-    s, a = agent.get_state()
+    agent = Agent(code_id, True, True)
+    s = agent.get_state()
 
     while agent.alive:
         # generate move
         move = agent.generate_move()
 
         # show current state and move
-        print(s, a, move)
-        s, a = agent.next_state(move)
+        # print(s, move)
+        s = agent.next_state(move)
 
         # Freeze
         # if not agent.alive:
@@ -176,13 +179,12 @@ if __name__ == '__main__':
 
     st = time.time()
 
-    for i in range(10):
+    for i in range(1):
         score, step = start_agent(i)
         score_list.append(score)
         total_steps += step
 
     print("Time:", time.time() - st)
-    print(score_list)
     print("Max:", max(score_list))
     print("Avg:", sum(score_list) / float(len(score_list)))
     print(total_steps)
