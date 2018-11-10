@@ -1,6 +1,7 @@
 import pygame
-from Snake import Snake
-from Food import Food
+
+from game.snake import Snake
+from game.food import Food
 
 WINDOW_WIDTH = 30  # 30
 WINDOW_HEIGHT = 30
@@ -10,7 +11,7 @@ FPS = 10
 
 def main():
     window = pygame.display.set_mode((WINDOW_WIDTH * PIXEL_SIZE, WINDOW_HEIGHT * PIXEL_SIZE))
-    pygame.display.set_caption("SNAKE GAME")
+    pygame.display.set_caption('SNAKE GAME')
     clock = pygame.time.Clock()
 
     score = 0
@@ -51,7 +52,7 @@ def main():
         window.fill((0, 0, 0))
         food.render(window)
         snake.render(window)
-        pygame.display.set_caption("SNAKE GAME | Score: " + str(score))
+        pygame.display.set_caption('SNAKE GAME | Score: ' + str(score))
         pygame.display.update()
         clock.tick(FPS)
 

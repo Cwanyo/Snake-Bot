@@ -1,6 +1,7 @@
 import pygame
 import random
-from Snake import Snake
+
+from game.snake import Snake
 
 
 class Food:
@@ -35,10 +36,10 @@ class Food:
     def spawn(self, snake: Snake):
         if not self.state:
             self.check_free_location(snake)
-            print('---- free len:', len(self.freeLocation))
+            # print('---- free len:', len(self.freeLocation))
 
             self.location = self.freeLocation[random.randrange(0, len(self.freeLocation))]
-            print('---- spawn at: ', self.location)
+            # print('---- spawn at: ', self.location)
             self.state = True
 
     # Render food

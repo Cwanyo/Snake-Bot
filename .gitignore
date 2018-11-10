@@ -8,7 +8,8 @@
 # idea
 .idea/
 
-# test file
+# project file
+files/
 test.py
 
 # User-specific stuff
