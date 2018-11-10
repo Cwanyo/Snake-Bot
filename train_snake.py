@@ -1,5 +1,7 @@
 import os
 import time
+import random
+import operator
 import numpy
 
 import keras
@@ -12,11 +14,12 @@ import itertools
 from agent import Agent
 import data as Data
 import model as Model
+from test_snake import test_in_game
 
 
 def train(model, x_train, y_train, x_valid, y_valid, batch_size, epochs, log_dir):
     # Use tensorboard
-    # cli => tensorboard --logdir path_to_dir
+    # cli => tensorboard --logdir files/training_logs
     tensorboard = keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=0, write_graph=True,
                                               batch_size=batch_size)
 
@@ -106,16 +109,16 @@ def main():
 
     # Hyper parameters
     num_features = 5
-    classes = ["Dead", "Alive"]
+    classes = ['Dead', 'Alive: Wrong Direction', 'Alive: Right Direction']
     num_classes = len(classes)
 
-    epochs = 3
-    batch_size = 64
+    epochs = 10
+    batch_size = 128
     learning_rate = 1.0
 
     # Load Data
-    x_train, y_train = Data.generate_data(5000)
-    x_valid, y_valid = Data.generate_data(1000)
+    x_train, y_train = Data.generate_data(80000, num_features, num_classes)
+    x_valid, y_valid = Data.generate_data(16000, num_features, num_classes)
 
     # Build model
     model = Model.build_model(num_features, num_classes, learning_rate)
@@ -143,6 +146,9 @@ def main():
 
     # Save the model
     Model.save_model(model, classes, output_dir)
+
+    # Test on game
+    # test_in_game(model, 1000, False, True, 200)
 
     # Visualize
     # plt.show()

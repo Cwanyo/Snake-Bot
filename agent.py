@@ -30,6 +30,7 @@ class Agent:
         # useful infos
         self.s_obstacles = self.get_surrounding_obstacles()
         self.food_angle = self.get_food_angle()
+        self.food_distance = self.get_food_distance()
 
     def init_visualization(self):
         if self.visualization:
@@ -39,8 +40,13 @@ class Agent:
         else:
             return None, None
 
-    def generate_move(self):
-        s, a = self.get_state()
+    def get_random_move(self, random_n=10):
+
+        # real random move, 1/random_n
+        if random_n is not 0 and random.randint(1, random_n) == 1:
+            return random.randint(-1, 1)
+
+        s, a, d = self.get_state()
         # random move depend on state
         ops = []
         # select move based on following the food angle and avoiding the obstacles
@@ -63,7 +69,7 @@ class Agent:
 
             # again, if no option -> just die
             if not ops:
-                return 0
+                return random.randint(-1, 1)
             else:
                 return ops[random.randint(0, len(ops) - 1)]
         else:
@@ -71,7 +77,7 @@ class Agent:
 
     def next_state(self, move_direction):
         self.step += 1
-        info = "CodeID: {} | Step: {} | Score: {}".format(self.code_id, self.step, self.score)
+        info = 'CodeID: {} | Step: {} | Score: {}'.format(self.code_id, self.step, self.score)
 
         self.snake.change_direction(move_direction)
         self.snake.move()
@@ -83,11 +89,11 @@ class Agent:
         self.food.spawn(self.snake)
 
         if self.snake.collision_obstacles():
-            info += " >> Game Over!"
+            info += ' >> Game Over!'
             self.alive = False
 
         if self.snake.get_length() == WINDOW_WIDTH * WINDOW_HEIGHT:
-            info += " >> Win!"
+            info += ' >> Win!'
             self.alive = False
 
         if self.log:
@@ -105,7 +111,7 @@ class Agent:
         return self.get_state()
 
     def get_state(self):
-        return self.get_surrounding_obstacles(), self.get_food_angle()
+        return self.get_surrounding_obstacles(), self.get_food_angle(), self.get_food_distance()
 
     def get_surrounding_obstacles(self):
         # check front
@@ -152,39 +158,59 @@ class Agent:
 
         return self.food_angle
 
+    def get_food_distance(self):
+        head = numpy.array(self.snake.head)
+        food = numpy.array(self.food.location)
+
+        max_dis = numpy.linalg.norm(numpy.array([0, 0]) - numpy.array([WINDOW_WIDTH - 1, WINDOW_HEIGHT - 1]))
+        dis = numpy.linalg.norm(head - food)
+
+        # normalize distance to the range 0 - 1
+        self.food_distance = dis / max_dis
+
+        return self.food_distance
+
 
 # test
 def start_agent(code_id=0):
-    agent = Agent(code_id, True, True)
+    agent = Agent(code_id, True, False, 30)
     s = agent.get_state()
 
     while agent.alive:
         # generate move
-        move = agent.generate_move()
+        move = agent.get_random_move(5)
 
         # show current state and move
-        # print(s, move)
+        print(s, move)
+        # pre_s = s
         s = agent.next_state(move)
 
         # Freeze
         # if not agent.alive:
-        #     input("PRESS ENTER TO END")
+        #     # input('PRESS ENTER TO END')
+        #     print(pre_s, move, agent.score)
 
     return agent.score, agent.step
 
 
 if __name__ == '__main__':
-    score_list = []
-    total_steps = 0
+    num_games = 100
+
+    l_score = []
+    l_steps = []
 
     st = time.time()
 
-    for i in range(1):
+    for i in range(num_games):
         score, step = start_agent(i)
-        score_list.append(score)
-        total_steps += step
+        l_score.append(score)
+        l_steps.append(step)
 
-    print("Time:", time.time() - st)
-    print("Max:", max(score_list))
-    print("Avg:", sum(score_list) / float(len(score_list)))
-    print(total_steps)
+    print('_________________________________________________________________')
+    print('Time:', time.time() - st)
+    print('Total Games:', num_games)
+    print('Total Steps:', sum(l_steps))
+    print('Avg Steps:', sum(l_steps) / float(len(l_steps)))
+    print('Max Score:', max(l_score))
+    print('Avg Score:', sum(l_score) / float(len(l_score)))
+    print('=================================================================')

@@ -1,8 +1,8 @@
-import numpy as np
+import numpy
 
 import keras
 from keras.utils import plot_model
-from keras.models import Sequential, Model
+from keras.models import Sequential, Model, model_from_json
 from keras.layers import Dense, Dropout, Flatten, LSTM, Input, concatenate
 from keras import backend as K
 
@@ -10,13 +10,15 @@ from keras import backend as K
 def build_model(num_features, num_classes, learning_rate):
     model = Sequential()
 
-    model.add(Dense(16, activation='relu', input_shape=(num_features, 1)))
-
-    model.add(Dense(32, activation='relu'))
-
-    model.add(Dense(32, activation='relu'))
+    model.add(Dense(32, activation='relu', input_shape=(num_features, 1)))
+    model.add(Dense(64, activation='relu'))
+    model.add(Dense(64, activation='relu'))
 
     model.add(Flatten())
+
+    model.add(Dense(128, activation='relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(32, activation='relu'))
 
     model.add(Dense(num_classes, activation='softmax'))
 
@@ -31,6 +33,20 @@ def build_model(num_features, num_classes, learning_rate):
     return model
 
 
+def load_model(time_path):
+    path = './files/training_logs/' + time_path + '/model'
+
+    # Load json and create the model
+    with open(path + '/model_config.json', 'r') as f:
+        model = model_from_json(f.read())
+
+    # Load weights into the new model
+    model.load_weights(path + '/model_weights.h5')
+    print('Loaded model from disk')
+
+    return model
+
+
 def get_model_memory_usage(batch_size, model):
     shapes_mem_count = 0
     for l in model.layers:
@@ -41,11 +57,11 @@ def get_model_memory_usage(batch_size, model):
             single_layer_mem *= s
         shapes_mem_count += single_layer_mem
 
-    trainable_count = np.sum([K.count_params(p) for p in set(model.trainable_weights)])
-    non_trainable_count = np.sum([K.count_params(p) for p in set(model.non_trainable_weights)])
+    trainable_count = numpy.sum([K.count_params(p) for p in set(model.trainable_weights)])
+    non_trainable_count = numpy.sum([K.count_params(p) for p in set(model.non_trainable_weights)])
 
     total_memory = 4.0 * batch_size * (shapes_mem_count + trainable_count + non_trainable_count)
-    gbytes = np.round(total_memory / (1024.0 ** 3), 3)
+    gbytes = numpy.round(total_memory / (1024.0 ** 3), 3)
 
     print('Approximately memory usage : {} gb'.format(gbytes))
 
