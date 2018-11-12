@@ -17,6 +17,7 @@ class Agent:
         self.code_id = code_id
         self.snake = Snake(WINDOW_WIDTH, WINDOW_HEIGHT, PIXEL_SIZE, WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2)
         self.food = Food(WINDOW_WIDTH, WINDOW_HEIGHT, PIXEL_SIZE)
+        self.food.spawn(self.snake)
 
         self.log = log
         self.visualization = visualization
