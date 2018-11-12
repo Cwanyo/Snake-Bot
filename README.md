@@ -1,4 +1,4 @@
-# Snake-Bot |  sb_2 - deep neural network
+# Snake-Bot |  sb_1 - deep neural network
 
 ```bash
 Input layer (5 features)
