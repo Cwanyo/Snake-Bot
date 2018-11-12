@@ -23,14 +23,10 @@ def generate_data(num_games, num_features, num_classes):
             # Generate move
             move = agent.get_random_move(5)
 
-            # Get current state, angle and move
+            # Get current state, angle and distance of food
             state_info = s.copy()
             state_info.append(a)
-            state_info.append(move)
-
-            # Log state
-            pre_distance = agent.food_distance
-            pre_score = agent.score
+            state_info.append(d)
 
             # Move snake
             s, a, d = agent.next_state(move)
@@ -38,22 +34,11 @@ def generate_data(num_games, num_features, num_classes):
             x_train.append(state_info)
             '''
             Y label
-            class 0 = dead
-            class 1 = alive but went to the wrong direction
-            class 2 = alive and went to the right direction
+            class 0 = move left
+            class 1 = move straight 
+            class 2 = move right
             '''
-            # y_train.append(1 if agent.alive else 0)
-            if not agent.alive:
-                # Snake is dead
-                y_train.append(0)
-            else:
-                # Snake is alive
-                if d < pre_distance or agent.score > pre_score:
-                    # Snake went to the right direction
-                    y_train.append(2)
-                else:
-                    # Snake went to the wrong direction
-                    y_train.append(1)
+            y_train.append(move + 1)
 
         # Record state
         score_list.append(agent.score)
