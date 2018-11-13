@@ -16,6 +16,7 @@ Output layer (softmax => distribute the probability among n class, which sum to 
 3: alive and went to right direction
 ```
 
+The sample video of the actual gameplay is [here](https://youtu.be/GUVog0M-OjE).
 
 ### Investigate the changes with TensorBoard
 
