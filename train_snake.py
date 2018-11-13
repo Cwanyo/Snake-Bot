@@ -114,7 +114,7 @@ def main():
 
     epochs = 10
     batch_size = 128
-    learning_rate = 1.0
+    learning_rate = 0.01
 
     # Load Data
     x_train, y_train = Data.generate_data(80000, num_features, num_classes)

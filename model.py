@@ -23,8 +23,8 @@ def build_model(num_features, num_classes, learning_rate):
     model.add(Dense(num_classes, activation='softmax'))
 
     # Optimizer
-    opt = keras.optimizers.Adadelta(lr=learning_rate)
-    # opt = keras.optimizers.SGD(lr=learning_rate, momentum=0.9, decay=0.0, nesterov=False)
+    # opt = keras.optimizers.Adadelta(lr=learning_rate)
+    opt = keras.optimizers.SGD(lr=learning_rate, momentum=0.9, decay=0.0, nesterov=False)
     # opt = keras.optimizers.Adam(lr=learning_rate)
 
     model.compile(loss=keras.losses.categorical_crossentropy, optimizer=opt,
@@ -74,7 +74,7 @@ def save_model(model, classes, output_dir):
         f.write(model_json)
 
     # Save model summary
-    plot_model(model, to_file=output_dir + 'model_summary.png')
+    plot_model(model, to_file=output_dir + 'model_summary.png', show_shapes=True, show_layer_names=True)
 
     with open(output_dir + 'model_summary.txt', 'w') as f:
         model.summary(print_fn=lambda x: f.write(x + '\n'))
