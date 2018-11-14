@@ -117,8 +117,8 @@ def main():
     learning_rate = 0.01
 
     # Load Data
-    x_train, y_train = Data.generate_data(10000, num_features, num_classes)
-    x_valid, y_valid = Data.generate_data(2000, num_features, num_classes)
+    x_train, y_train = Data.generate_data(40000, num_features, num_classes)
+    x_valid, y_valid = Data.generate_data(8000, num_features, num_classes)
 
     # Build model
     model = Model.build_model(num_features, num_classes, learning_rate)

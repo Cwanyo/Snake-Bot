@@ -21,7 +21,7 @@ def generate_data(num_games, num_features, num_classes):
         # TODO - set maximum step due to alive data are more than dead data
         while agent.alive:
             # Generate move
-            move = agent.get_random_move(5)
+            move = agent.get_random_move(0)
 
             # Get current state, angle and distance of food
             state_info = s.copy()

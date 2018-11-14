@@ -70,7 +70,8 @@ def test_single(model):
 
 def main():
     print('--start--')
-    time_path = '2018-11-11_17-56-27,opt=Adadelta,lr=1.0,b=128,e=3'
+    # change dir path here
+    time_path = '2018-11-14_01-07-36,opt=SGD,lr=0.01,b=128,e=10'
     model = Model.load_model(time_path)
 
     # test_single(model)
