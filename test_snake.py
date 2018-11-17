@@ -8,40 +8,59 @@ import model as Model
 
 def test_in_game(model, num_games=1000, log=False, visualization=False, fps=200):
     # State info
+    bad_moves = 0
     score_list = []
     step_list = []
     st = time.time()
 
     for i in range(num_games):
         agent = Agent(i, log, visualization, fps)
-        s, a, d = agent.get_state()
+        s, a, d, b = agent.get_state()
 
         while agent.alive:
-            predicts = []
-            state_infos = []
-            # Predict move by current state, angle and all possible moves
-            for m in range(-1, 2):
-                state_info = s.copy()
-                state_info.append(a)
-                state_info.append(m)
+            # Predict move by current board
+            board = numpy.array(b).reshape(-1, 22, 22, 1)
 
-                x = numpy.array(state_info).reshape(-1, 5, 1)
-                predict = model.predict(x)
-                # predicts.append(list(predict[0]))
-                # Rounded the predict value to 2 decimal places
-                predicts.append(list([format(p, '.2f') for p in predict[0]]))
+            predict = model.predict(board)
 
-                state_infos.append(state_info)
+            # Rounded the predict value to 2 decimal places
+            predict = list([format(p, '.2f') for p in predict[0]])
 
-            predicts_sorted = sorted(predicts, key=operator.itemgetter(0, 1, 2))
-            # predicts_sorted = sorted(predicts, key=operator.itemgetter(2), reverse=True)
-            move = predicts.index(predicts_sorted[0]) - 1
+            # Get the best heading direction based on prediction
+            '''
+            0 = move left
+            1 = move up 
+            2 = move right
+            3 = move down
+            '''
+            # Convert to -1 0 1 move
+            predict_heading = predict.index(max(predict))
+            curr_heading = agent.snake.heading_direction
+            invalid_heading = (curr_heading + 2) % 4
+            move = 0
+            if predict_heading != invalid_heading:
+                move = predict_heading - curr_heading
+
+            pre_s = s
+            pre_b = b
 
             # Move the snake
-            s, a, d = agent.next_state(move)
+            s, a, d, b = agent.next_state(move)
 
             if not agent.alive:
-                print(agent.code_id, state_infos[move + 1], agent.score)
+                '''
+                There are some bad move made by the model. 
+                It move to the direction of the food without caring about the obstacles and die.
+                pre_s = [1,1,1] is worst case that surrounded by obstacles
+                '''
+                if sum(pre_s) != 3:
+                    bad_moves += 1
+
+                for r in pre_b:
+                    for c in r:
+                        print(c, end='\t')
+                    print()
+                print(agent.code_id, pre_s, agent.score)
                 # input('PRESS ENTER TO CON')
 
         # Record state
@@ -56,34 +75,65 @@ def test_in_game(model, num_games=1000, log=False, visualization=False, fps=200)
     print('Avg Steps:', sum(step_list) / float(len(step_list)))
     print('Max Score:', max(score_list))
     print('Avg Score:', sum(score_list) / float(len(score_list)))
+    print('Bad Moves:', bad_moves)
     print('=================================================================')
 
 
+def get_board_sample(window_width, window_height):
+    snake_head = [19.0, 1.0]
+    snake_body = [[19.0, 2.0], [19.0, 3.0], [19.0, 4.0], [19.0, 5.0], [18.0, 5.0], [18.0, 6.0], [17.0, 6.0],
+                  [17.0, 7.0], [16.0, 7.0], [16.0, 8.0], [15.0, 8.0]]
+    food_location = [18, 1]
+
+    # coordinate x,y are opposite in array => y,x
+    temp_board = [[0] * (window_width + 2) for i in range(window_height + 2)]
+
+    # mark top & bottom wall
+    for i in range(len(temp_board[0])):
+        temp_board[0][i] = -1
+        temp_board[len(temp_board) - 1][i] = -1
+
+    # mark left and right wall
+    for i in range(len(temp_board)):
+        temp_board[i][0] = -1
+        temp_board[i][len(temp_board[0]) - 1] = -1
+
+    # mark snake
+    temp_board[int(snake_head[1]) + 1][int(snake_head[0]) + 1] = 0.5
+    for b in snake_body:
+        temp_board[int(b[1]) + 1][int(b[0]) + 1] = -1
+
+    # mark food
+    temp_board[int(food_location[1]) + 1][int(food_location[0]) + 1] = 1
+
+    return temp_board
+
+
 def test_single(model):
-    predicts = []
-    for i in range(-1, 2):
-        s = [1, 0, 1, 0.5, i]
-        s = numpy.array(s).reshape(-1, 5, 1)
+    s = get_board_sample(20, 20)
 
-        predict = model.predict(s)
-
-        # predicts.append(list(predict[0]))
-        predicts.append(list([format(p, '.2f') for p in predict[0]]))
-
-        print('Move:', i, end=' => ')
-        for j in range(len(predict[0])):
-            print(format(predict[0][j], '.15f'), predicts[i + 1][j], '|', end=' ')
+    for r in s:
+        for c in r:
+            print(c, end='\t')
         print()
 
-    predicts_sorted = sorted(predicts, key=operator.itemgetter(0, 1, 2))
-    # predicts_sorted = sorted(predicts, key=operator.itemgetter(2), reverse=True)
-    move = predicts.index(predicts_sorted[0]) - 1
+    s = numpy.array(s).reshape(-1, 22, 22, 1)
+
+    predict = model.predict(s)
+    print(predict)
+
+    # Rounded the predict value to 2 decimal places
+    predict = list([format(p, '.2f') for p in predict[0]])
+    print(predict)
+
+    move = predict.index(max(predict))
     print('selected move:', move)
 
 
 def main():
     print('--start--')
-    time_path = '2018-11-10_23-00-38,opt=Adadelta,lr=1.0,b=128,e=10'
+    # change dir path here
+    time_path = '2018-11-17_07-46-56,opt=SGD,lr=0.01,b=128,e=10'
     model = Model.load_model(time_path)
 
     # test_single(model)

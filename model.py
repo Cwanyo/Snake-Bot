@@ -3,22 +3,28 @@ import numpy
 import keras
 from keras.utils import plot_model
 from keras.models import Sequential, Model, model_from_json
-from keras.layers import Dense, Dropout, Flatten, LSTM, Input, concatenate
+from keras.layers import Dense, Dropout, Flatten, LSTM, Input, concatenate, Conv2D, MaxPooling2D, BatchNormalization
 from keras import backend as K
 
 
-def build_model(num_features, num_classes, learning_rate):
+def build_model(img_size, num_channels, num_classes, learning_rate):
     model = Sequential()
 
-    model.add(Dense(32, activation='relu', input_shape=(num_features, 1)))
-    model.add(Dense(64, activation='relu'))
-    model.add(Dense(64, activation='relu'))
+    model.add(Conv2D(filters=32, kernel_size=(4, 4), strides=(1, 1), padding='same', activation='relu',
+                     input_shape=(img_size, img_size, num_channels)))
+    model.add(BatchNormalization(axis=3))
+
+    model.add(Conv2D(filters=64, kernel_size=(5, 5), strides=(2, 2), padding='same', activation='relu'))
+    model.add(Conv2D(filters=64, kernel_size=(5, 5), strides=(2, 2), padding='same', activation='relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='same'))
 
     model.add(Flatten())
 
-    model.add(Dense(128, activation='relu'))
+    model.add(Dense(256, activation='relu'))
+
     model.add(Dropout(0.5))
-    model.add(Dense(32, activation='relu'))
+
+    model.add(Dense(128, activation='relu'))
 
     model.add(Dense(num_classes, activation='softmax'))
 

@@ -108,8 +108,9 @@ def main():
     log_dir = './files/training_logs/'
 
     # Hyper parameters
-    num_features = 5
-    classes = ['Dead', 'Alive: Wrong Direction', 'Alive: Right Direction']
+    img_size = 22  # game board size + 2
+    num_channels = 1
+    classes = ['Move Left', 'Move Up', 'Move Right', 'Move Down']
     num_classes = len(classes)
 
     epochs = 10
@@ -117,11 +118,11 @@ def main():
     learning_rate = 0.01
 
     # Load Data
-    x_train, y_train = Data.generate_data(80000, num_features, num_classes)
-    x_valid, y_valid = Data.generate_data(16000, num_features, num_classes)
+    x_train, y_train = Data.generate_data(10000, img_size, num_classes)
+    x_valid, y_valid = Data.generate_data(2000, img_size, num_classes)
 
     # Build model
-    model = Model.build_model(num_features, num_classes, learning_rate)
+    model = Model.build_model(img_size, num_channels, num_classes, learning_rate)
 
     # View model summary
     model.summary()

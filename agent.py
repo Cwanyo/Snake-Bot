@@ -32,6 +32,7 @@ class Agent:
         self.s_obstacles = self.get_surrounding_obstacles()
         self.food_angle = self.get_food_angle()
         self.food_distance = self.get_food_distance()
+        self.board = self.get_board()
 
     def init_visualization(self):
         if self.visualization:
@@ -47,7 +48,7 @@ class Agent:
         if random_n is not 0 and random.randint(1, random_n) == 1:
             return random.randint(-1, 1)
 
-        s, a, d = self.get_state()
+        s, a, d, b = self.get_state()
         # random move depend on state
         ops = []
         # select move based on following the food angle and avoiding the obstacles
@@ -112,7 +113,7 @@ class Agent:
         return self.get_state()
 
     def get_state(self):
-        return self.get_surrounding_obstacles(), self.get_food_angle(), self.get_food_distance()
+        return self.get_surrounding_obstacles(), self.get_food_angle(), self.get_food_distance(), self.get_board()
 
     def get_surrounding_obstacles(self):
         # check front
@@ -171,18 +172,48 @@ class Agent:
 
         return self.food_distance
 
+    def get_board(self):
+        # coordinate x,y are opposite to array => y,x
+        temp_board = [[0] * (WINDOW_WIDTH + 2) for i in range(WINDOW_HEIGHT + 2)]
+
+        # mark top & bottom wall
+        for i in range(len(temp_board[0])):
+            temp_board[0][i] = -10
+            temp_board[len(temp_board) - 1][i] = -10
+
+        # mark left and right wall
+        for i in range(len(temp_board)):
+            temp_board[i][0] = -10
+            temp_board[i][len(temp_board[0]) - 1] = -10
+
+        # mark snake
+        temp_board[int(self.snake.head[1]) + 1][int(self.snake.head[0]) + 1] = 5
+        for b in self.snake.body:
+            temp_board[int(b[1]) + 1][int(b[0]) + 1] = -10
+
+        # mark food
+        temp_board[int(self.food.location[1]) + 1][int(self.food.location[0]) + 1] = 10
+
+        self.board = temp_board
+
+        return self.board
+
 
 # test
 def start_agent(code_id=0):
-    agent = Agent(code_id, True, False, 30)
+    agent = Agent(code_id, False, True, 30)
     s = agent.get_state()
 
     while agent.alive:
         # generate move
-        move = agent.get_random_move(5)
+        move = agent.get_random_move(0)
 
         # show current state and move
-        print(s, move)
+        for r in s[3]:
+            for c in r:
+                print(c, end='\t')
+            print()
+        print(move)
         # pre_s = s
         s = agent.next_state(move)
 

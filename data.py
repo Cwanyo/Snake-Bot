@@ -4,7 +4,7 @@ import numpy
 from agent import Agent
 
 
-def generate_data(num_games, num_features, num_classes):
+def generate_data(num_games, img_size, num_classes):
     # Game data
     x_train = []
     y_train = []
@@ -16,44 +16,30 @@ def generate_data(num_games, num_features, num_classes):
 
     for i in range(num_games):
         agent = Agent(i)
-        s, a, d = agent.get_state()
+        s, a, d, b = agent.get_state()
 
         # TODO - set maximum step due to alive data are more than dead data
         while agent.alive:
             # Generate move
-            move = agent.get_random_move(5)
+            move = agent.get_random_move(0)
 
-            # Get current state, angle and move
-            state_info = s.copy()
-            state_info.append(a)
-            state_info.append(move)
-
-            # Log state
-            pre_distance = agent.food_distance
-            pre_score = agent.score
+            # Get current board
+            pre_b = b.copy()
 
             # Move snake
-            s, a, d = agent.next_state(move)
+            s, a, d, b = agent.next_state(move)
 
-            x_train.append(state_info)
             '''
-            Y label
-            class 0 = dead
-            class 1 = alive but went to the wrong direction
-            class 2 = alive and went to the right direction
+            Y label - use 4 heading directions, not -1 0 1
+            class 0 = move left
+            class 1 = move up 
+            class 2 = move right
+            class 3 = move down
+            also use alive data only
             '''
-            # y_train.append(1 if agent.alive else 0)
-            if not agent.alive:
-                # Snake is dead
-                y_train.append(0)
-            else:
-                # Snake is alive
-                if d < pre_distance or agent.score > pre_score:
-                    # Snake went to the right direction
-                    y_train.append(2)
-                else:
-                    # Snake went to the wrong direction
-                    y_train.append(1)
+            if agent.alive:
+                x_train.append(pre_b)
+                y_train.append(agent.snake.heading_direction)
 
         # Record state
         score_list.append(agent.score)
@@ -71,11 +57,12 @@ def generate_data(num_games, num_features, num_classes):
     print('-Class 0:', y_train.count(0))
     print('-Class 1:', y_train.count(1))
     print('-Class 2:', y_train.count(2))
+    print('-Class 3:', y_train.count(3))
 
     # Convert y label to onehot encoded
     y_train = onehot(y_train, num_classes)
 
-    x_train = numpy.array(x_train).reshape(-1, num_features, 1)
+    x_train = numpy.array(x_train).reshape(-1, img_size, img_size, 1)
     y_train = numpy.array(y_train)
 
     return x_train, y_train
