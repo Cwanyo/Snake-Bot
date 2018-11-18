@@ -7,34 +7,89 @@ from keras.layers import Dense, Dropout, Flatten, LSTM, Input, concatenate, Conv
 from keras import backend as K
 
 
-def build_model(img_size, num_channels, num_classes, learning_rate):
-    model = Sequential()
+def build_movement_branch(input_node, num_classes):
+    x = Conv2D(filters=32, kernel_size=(4, 4), strides=(1, 1), padding='same', activation='relu')(input_node)
+    x = BatchNormalization(axis=3)(x)
 
-    model.add(Conv2D(filters=32, kernel_size=(4, 4), strides=(1, 1), padding='same', activation='relu',
-                     input_shape=(img_size, img_size, num_channels)))
-    model.add(BatchNormalization(axis=3))
+    x = Conv2D(filters=64, kernel_size=(5, 5), strides=(2, 2), padding='same', activation='relu')(x)
+    x = BatchNormalization(axis=3)(x)
+    x = Conv2D(filters=64, kernel_size=(5, 5), strides=(2, 2), padding='same', activation='relu')(x)
+    x = BatchNormalization(axis=3)(x)
 
-    model.add(Conv2D(filters=64, kernel_size=(5, 5), strides=(2, 2), padding='same', activation='relu'))
-    model.add(Conv2D(filters=64, kernel_size=(5, 5), strides=(2, 2), padding='same', activation='relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='same'))
+    x = Conv2D(filters=128, kernel_size=(3, 3), strides=(1, 1), padding='same', activation='relu')(x)
+    x = BatchNormalization(axis=3)(x)
+    x = MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='same')(x)
 
-    model.add(Flatten())
+    x = Flatten()(x)
 
-    model.add(Dense(256, activation='relu'))
+    x = Dense(512, activation='relu')(x)
+    x = Dropout(0.5)(x)
+    x = Dense(256, activation='relu')(x)
 
-    model.add(Dropout(0.5))
+    output = Dense(num_classes, activation='softmax', name='movement_output')(x)
 
-    model.add(Dense(128, activation='relu'))
+    return output
 
-    model.add(Dense(num_classes, activation='softmax'))
+
+def build_state_branch(input_node, num_classes):
+    # x = Conv2D(filters=32, kernel_size=(4, 4), strides=(2, 2), padding='same', activation='relu')(input_node)
+    # x = BatchNormalization(axis=3)(x)
+    #
+    # x = Conv2D(filters=64, kernel_size=(3, 3), strides=(1, 1), padding='same', activation='relu')(x)
+    # x = BatchNormalization(axis=3)(x)
+    # x = MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='same')(x)
+    #
+    # x = Conv2D(filters=64, kernel_size=(3, 3), strides=(1, 1), padding='same', activation='relu')(x)
+    # x = BatchNormalization(axis=3)(x)
+    # x = MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='same')(x)
+
+    x = Conv2D(filters=32, kernel_size=(3, 3), strides=(1, 1), padding='same', activation='relu')(input_node)
+    x = BatchNormalization(axis=3)(x)
+    x = MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='same')(x)
+
+    x = Conv2D(filters=64, kernel_size=(3, 3), strides=(1, 1), padding='same', activation='relu')(x)
+    x = BatchNormalization(axis=3)(x)
+    x = MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='same')(x)
+
+    x = Conv2D(filters=64, kernel_size=(3, 3), strides=(1, 1), padding='same', activation='relu')(x)
+    x = BatchNormalization(axis=3)(x)
+    x = MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='same')(x)
+
+    x = Flatten()(x)
+
+    x = Dense(256, activation='relu')(x)
+    x = Dropout(0.5)(x)
+    x = Dense(128, activation='relu')(x)
+
+    output = Dense(num_classes, activation='softmax', name='state_output')(x)
+
+    return output
+
+
+def build_model(img_size, num_channels, num_movement_classes, num_state_classes, learning_rate):
+    inputs = Input(shape=(img_size, img_size, num_channels))
+
+    movement_branch = build_movement_branch(inputs, num_movement_classes)
+    # TODO - remove batch
+    state_branch = build_state_branch(inputs, num_state_classes)
+
+    model = Model(inputs=inputs, outputs=[movement_branch, state_branch])
+
+    # define for two output branches
+    losses = {
+        'movement_output': keras.losses.categorical_crossentropy,
+        'state_output': keras.losses.categorical_crossentropy,
+    }
+
+    # 1:1 mapping
+    loss_weights = {'movement_output': 1.0, 'state_output': 1.0}
 
     # Optimizer
     # opt = keras.optimizers.Adadelta(lr=learning_rate)
     opt = keras.optimizers.SGD(lr=learning_rate, momentum=0.9, decay=0.0, nesterov=False)
     # opt = keras.optimizers.Adam(lr=learning_rate)
 
-    model.compile(loss=keras.losses.categorical_crossentropy, optimizer=opt,
-                  metrics=['accuracy'])
+    model.compile(loss=losses, loss_weights=loss_weights, optimizer=opt, metrics=['accuracy'])
 
     return model
 
@@ -72,7 +127,7 @@ def get_model_memory_usage(batch_size, model):
     print('Approximately memory usage : {} gb'.format(gbytes))
 
 
-def save_model(model, classes, output_dir):
+def save_model(model, movement_classes, state_classes, output_dir):
     print('Saving model details')
     # Save model config
     model_json = model.to_json()
@@ -87,7 +142,9 @@ def save_model(model, classes, output_dir):
 
     # Save labels
     with open(output_dir + 'trained_labels.txt', 'w') as f:
-        f.write('\n'.join(classes) + '\n')
+        f.write('\n'.join(movement_classes) + '\n')
+        f.write('------------------------------\n')
+        f.write('\n'.join(state_classes) + '\n')
 
     print('Saving trained model')
     model.save_weights(output_dir + 'model_weights.h5')

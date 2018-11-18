@@ -31,32 +31,54 @@ def train(model, x_train, y_train, x_valid, y_valid, batch_size, epochs, log_dir
               validation_data=(x_valid, y_valid), callbacks=[tensorboard])
 
 
-def evaluate(model, classes, x_test, y_test, output_dir):
+def evaluate(model, movement_classes, state_classes, x_test, y_test, output_dir):
     print('_________________________________________________________________')
     # Evaluate with testing data
     evaluation = model.evaluate(x_test, y_test)
 
-    print('Summary: Loss over the testing dataset: %.2f, Accuracy: %.2f' % (evaluation[0], evaluation[1]))
+    print('Summary: Loss over the testing dataset: %.2f' % evaluation[0])
+    print('- movement_output loss: %.2f' % evaluation[1])
+    print('- state_output loss: %.2f' % evaluation[2])
+    print('- movement_output accuracy: %.2f' % evaluation[3])
+    print('- state_output accuracy: %.2f' % evaluation[4])
 
     # Get prediction from given x_test
-    y_pred = model.predict_classes(x_test)
+    y_pred = model.predict(x_test)
 
-    cr = classification_report(numpy.argmax(y_test, axis=1), y_pred, target_names=classes)
-    # Get report
-    print(cr)
+    k = list(y_test.keys())
 
-    # Get confusion matrix
-    cm = confusion_matrix(numpy.argmax(y_test, axis=1), y_pred)
-    plot_confusion_matrix(cm, classes)
+    # Get report and confusion matrix for movement
+    print('_________________________________________________________________')
+    print(k[0])
+    movement_cr = classification_report(numpy.argmax(y_test[k[0]], axis=1), numpy.argmax(y_pred[0], axis=1),
+                                        target_names=movement_classes)
+    print(movement_cr)
 
+    movement_cm = confusion_matrix(numpy.argmax(y_test[k[0]], axis=1), numpy.argmax(y_pred[0], axis=1))
+    plot_confusion_matrix(movement_cm, movement_classes)
     # Save evaluate files
-    plt.savefig(output_dir + 'confusion_matrix.jpg')
+    plt.savefig(output_dir + 'movement_confusion_matrix.jpg')
+    with open(output_dir + 'movement_confusion_matrix.txt', 'w') as f:
+        f.write(numpy.array2string(movement_cm, separator=', '))
+    with open(output_dir + 'movement_classification_report.txt', 'w') as f:
+        f.write(movement_cr)
 
-    with open(output_dir + 'confusion_matrix.txt', 'w') as f:
-        f.write(numpy.array2string(cm, separator=', '))
+    plt.gcf().clear()
+    # Get report and confusion matrix for state
+    print('_________________________________________________________________')
+    print(k[1])
+    state_cr = classification_report(numpy.argmax(y_test[k[1]], axis=1), numpy.argmax(y_pred[1], axis=1),
+                                     target_names=state_classes)
+    print(state_cr)
 
-    with open(output_dir + 'classification_report.txt', 'w') as f:
-        f.write(cr)
+    state_cm = confusion_matrix(numpy.argmax(y_test[k[1]], axis=1), numpy.argmax(y_pred[1], axis=1))
+    plot_confusion_matrix(state_cm, state_classes)
+    # Save evaluate files
+    plt.savefig(output_dir + 'state_confusion_matrix.jpg')
+    with open(output_dir + 'state_movement_confusion_matrix.txt', 'w') as f:
+        f.write(numpy.array2string(state_cm, separator=', '))
+    with open(output_dir + 'state_movement_classification_report.txt', 'w') as f:
+        f.write(state_cr)
 
     print('=================================================================')
 
@@ -110,19 +132,24 @@ def main():
     # Hyper parameters
     img_size = 22  # game board size + 2
     num_channels = 1
-    classes = ['Move Left', 'Move Up', 'Move Right', 'Move Down']
-    num_classes = len(classes)
+
+    movement_classes = ['Move Left', 'Move Up', 'Move Right', 'Move Down']
+    state_classes = ['Dead', 'Alive: Wrong Direction', 'Alive: Right Direction']
+    num_movement_classes = len(movement_classes)
+    num_state_classes = len(state_classes)
 
     epochs = 10
     batch_size = 128
     learning_rate = 0.01
 
     # Load Data
-    x_train, y_train = Data.generate_data(10000, img_size, num_classes)
-    x_valid, y_valid = Data.generate_data(2000, img_size, num_classes)
+    x_train, movement_y_train, state_y_train = Data.generate_data(1000, img_size, num_movement_classes,
+                                                                  num_state_classes)
+    x_valid, movement_y_valid, state_y_valid = Data.generate_data(200, img_size, num_movement_classes,
+                                                                  num_state_classes)
 
     # Build model
-    model = Model.build_model(img_size, num_channels, num_classes, learning_rate)
+    model = Model.build_model(img_size, num_channels, num_movement_classes, num_state_classes, learning_rate)
 
     # View model summary
     model.summary()
@@ -140,13 +167,17 @@ def main():
     prepare_dir(output_dir)
 
     # Train the model
-    train(model, x_train, y_train, x_valid, y_valid, batch_size, epochs, log_dir)
+    train(model, x_train, {'movement_output': movement_y_train, 'state_output': state_y_train},
+          x_valid, {'movement_output': movement_y_valid, 'state_output': state_y_valid},
+          batch_size, epochs, log_dir)
 
     # Evaluate the model
-    evaluate(model, classes, x_valid, y_valid, output_dir)
+    evaluate(model, movement_classes, state_classes,
+             x_valid, {'movement_output': movement_y_valid, 'state_output': state_y_valid},
+             output_dir)
 
     # Save the model
-    Model.save_model(model, classes, output_dir)
+    Model.save_model(model, movement_classes, state_classes, output_dir)
 
     # Test on game
     # test_in_game(model, 1000, False, True, 200)
