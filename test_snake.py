@@ -14,17 +14,25 @@ def test_in_game(model, num_games=1000, log=False, visualization=False, fps=200)
     st = time.time()
 
     for i in range(num_games):
+        mem_step = []
+
         agent = Agent(i, log, visualization, fps)
         s, a, d, b = agent.get_state()
 
         while agent.alive:
             # Predict move by current board
-            board = numpy.array(b).reshape(-1, 22, 22, 1)
+            mem_step.append(b)
+
+            pre_step = mem_step[len(mem_step) - 100:]
+
+            board = numpy.array(pre_step).reshape(-1, len(pre_step), 22, 22, 1)
 
             predict = model.predict(board)
 
+            predict = numpy.array(predict).reshape(-1, 4)
+
             # Rounded the predict value to 2 decimal places
-            predict = list([format(p, '.2f') for p in predict[0]])
+            predict = list([format(p, '.2f') for p in predict[-1]])
 
             # Get the best heading direction based on prediction
             '''
@@ -60,8 +68,8 @@ def test_in_game(model, num_games=1000, log=False, visualization=False, fps=200)
                     for c in r:
                         print(c, end='\t')
                     print()
-                print(agent.code_id, pre_s, agent.score)
-                # input('PRESS ENTER TO CON')
+                print(agent.code_id, pre_s, predict_heading)
+                input('PRESS ENTER TO CON')
 
         # Record state
         score_list.append(agent.score)
@@ -117,10 +125,12 @@ def test_single(model):
             print(c, end='\t')
         print()
 
-    s = numpy.array(s).reshape(-1, 22, 22, 1)
+    s = numpy.array(s).reshape(-1, 2, 22, 22, 1)
 
     predict = model.predict(s)
     print(predict)
+
+    predict = numpy.array(predict).reshape(-1, 4)
 
     # Rounded the predict value to 2 decimal places
     predict = list([format(p, '.2f') for p in predict[0]])
@@ -133,7 +143,7 @@ def test_single(model):
 def main():
     print('--start--')
     # change dir path here
-    time_path = '2018-11-17_07-46-56,opt=SGD,lr=0.01,b=128,e=10'
+    time_path = '2018-11-21_01-30-48,opt=SGD,lr=0.01,b=16,e=10'
     model = Model.load_model(time_path)
 
     # test_single(model)

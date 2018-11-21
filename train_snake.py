@@ -41,12 +41,15 @@ def evaluate(model, classes, x_test, y_test, output_dir):
     # Get prediction from given x_test
     y_pred = model.predict_classes(x_test)
 
-    cr = classification_report(numpy.argmax(y_test, axis=1), y_pred, target_names=classes)
+    y_pred = numpy.array(y_pred).reshape(-1)
+    y_test = numpy.argmax(y_test, axis=2).reshape(-1)
+
+    cr = classification_report(y_test, y_pred, target_names=classes)
     # Get report
     print(cr)
 
     # Get confusion matrix
-    cm = confusion_matrix(numpy.argmax(y_test, axis=1), y_pred)
+    cm = confusion_matrix(y_test, y_pred)
     plot_confusion_matrix(cm, classes)
 
     # Save evaluate files
@@ -114,15 +117,17 @@ def main():
     num_classes = len(classes)
 
     epochs = 10
-    batch_size = 128
+
+    time_steps = 100
+    batch_size = 16
     learning_rate = 0.01
 
     # Load Data
-    x_train, y_train = Data.generate_data(10000, img_size, num_classes)
-    x_valid, y_valid = Data.generate_data(2000, img_size, num_classes)
+    x_train, y_train = Data.generate_data(3000, time_steps, img_size, num_classes)
+    x_valid, y_valid = Data.generate_data(600, time_steps, img_size, num_classes)
 
     # Build model
-    model = Model.build_model(img_size, num_channels, num_classes, learning_rate)
+    model = Model.build_model(time_steps, img_size, num_channels, num_classes, learning_rate)
 
     # View model summary
     model.summary()

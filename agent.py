@@ -201,7 +201,7 @@ class Agent:
 
 # test
 def start_agent(code_id=0):
-    agent = Agent(code_id, False, True, 30)
+    agent = Agent(code_id, False, False, 30)
     s = agent.get_state()
 
     while agent.alive:
@@ -209,11 +209,11 @@ def start_agent(code_id=0):
         move = agent.get_random_move(0)
 
         # show current state and move
-        for r in s[3]:
-            for c in r:
-                print(c, end='\t')
-            print()
-        print(move)
+        # for r in s[3]:
+        #     for c in r:
+        #         print(c, end='\t')
+        #     print()
+        # print(move)
         # pre_s = s
         s = agent.next_state(move)
 
@@ -226,7 +226,7 @@ def start_agent(code_id=0):
 
 
 if __name__ == '__main__':
-    num_games = 100
+    num_games = 2500
 
     l_score = []
     l_steps = []

@@ -4,7 +4,7 @@ import numpy
 from agent import Agent
 
 
-def generate_data(num_games, img_size, num_classes):
+def generate_data(num_games, time_steps, img_size, num_classes):
     # Game data
     x_train = []
     y_train = []
@@ -15,10 +15,12 @@ def generate_data(num_games, img_size, num_classes):
     st = time.time()
 
     for i in range(num_games):
+        temp_x_train = []
+        temp_y_train = []
+
         agent = Agent(i)
         s, a, d, b = agent.get_state()
 
-        # TODO - set maximum step due to alive data are more than dead data
         while agent.alive:
             # Generate move
             move = agent.get_random_move(0)
@@ -38,12 +40,20 @@ def generate_data(num_games, img_size, num_classes):
             also use alive data only
             '''
             if agent.alive:
-                x_train.append(pre_b)
-                y_train.append(agent.snake.heading_direction)
+                temp_x_train.append(pre_b)
+                temp_y_train.append(agent.snake.heading_direction)
+            else:
+                agent.step -= 1
 
-        # Record state
-        score_list.append(agent.score)
-        step_list.append(agent.step)
+        if len(temp_x_train) >= time_steps:
+            till_step = len(temp_x_train) - (len(temp_x_train) % time_steps)
+
+            x_train.extend(temp_x_train[:till_step])
+            y_train.extend(temp_y_train[:till_step])
+
+            # Record state
+            score_list.append(agent.score)
+            step_list.append(till_step)
 
     # Show state
     print('_________________________________________________________________')
@@ -62,8 +72,8 @@ def generate_data(num_games, img_size, num_classes):
     # Convert y label to onehot encoded
     y_train = onehot(y_train, num_classes)
 
-    x_train = numpy.array(x_train).reshape(-1, img_size, img_size, 1)
-    y_train = numpy.array(y_train)
+    x_train = numpy.array(x_train).reshape(-1, time_steps, img_size, img_size, 1)
+    y_train = numpy.array(y_train).reshape(-1, time_steps, num_classes)
 
     return x_train, y_train
 
