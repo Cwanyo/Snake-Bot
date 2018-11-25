@@ -123,8 +123,8 @@ def main():
     learning_rate = 0.01
 
     # Load Data
-    x_train, y_train = Data.generate_data(3000, time_steps, img_size, num_classes)
-    x_valid, y_valid = Data.generate_data(600, time_steps, img_size, num_classes)
+    x_train, y_train = Data.generate_data(2500, time_steps, img_size, num_classes)
+    x_valid, y_valid = Data.generate_data(500, time_steps, img_size, num_classes)
 
     # Build model
     model = Model.build_model(time_steps, img_size, num_channels, num_classes, learning_rate)

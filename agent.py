@@ -3,6 +3,7 @@ import numpy
 import math
 import random
 import pygame
+import operator
 
 from game.snake import Snake
 from game.food import Food
@@ -76,6 +77,29 @@ class Agent:
                 return ops[random.randint(0, len(ops) - 1)]
         else:
             return ops[random.randint(0, len(ops) - 1)]
+
+    def get_move(self, model):
+        predicts = []
+        state_infos = []
+        # Predict move by current state, angle and all possible moves
+        for m in range(-1, 2):
+            state_info = self.s_obstacles.copy()
+            state_info.append(self.food_angle)
+            state_info.append(m)
+
+            x = numpy.array(state_info).reshape(-1, 5, 1)
+            predict = model.predict(x)
+            # predicts.append(list(predict[0]))
+            # Rounded the predict value to 2 decimal places
+            predicts.append(list([format(p, '.2f') for p in predict[0]]))
+
+            state_infos.append(state_info)
+
+        predicts_sorted = sorted(predicts, key=operator.itemgetter(0, 1, 2))
+        # predicts_sorted = sorted(predicts, key=operator.itemgetter(2), reverse=True)
+        move = predicts.index(predicts_sorted[0]) - 1
+
+        return move
 
     def next_state(self, move_direction):
         self.step += 1

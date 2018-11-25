@@ -2,6 +2,7 @@ import time
 import numpy
 
 from agent import Agent
+import model as Model
 
 
 def generate_data(num_games, time_steps, img_size, num_classes):
@@ -14,6 +15,9 @@ def generate_data(num_games, time_steps, img_size, num_classes):
     step_list = []
     st = time.time()
 
+    time_path = 'sb_1'
+    model = Model.load_model(time_path)
+
     for i in range(num_games):
         temp_x_train = []
         temp_y_train = []
@@ -21,9 +25,13 @@ def generate_data(num_games, time_steps, img_size, num_classes):
         agent = Agent(i)
         s, a, d, b = agent.get_state()
 
+        ate_food_at_step = 0
+        pre_score = 0
+
         while agent.alive:
             # Generate move
-            move = agent.get_random_move(0)
+            # move = agent.get_random_move(0)
+            move = agent.get_move(model)
 
             # Get current board
             pre_b = b.copy()
@@ -44,6 +52,13 @@ def generate_data(num_games, time_steps, img_size, num_classes):
                 temp_y_train.append(agent.snake.heading_direction)
             else:
                 agent.step -= 1
+
+            if agent.score > pre_score:
+                pre_score = agent.score
+                ate_food_at_step = agent.step
+
+        temp_x_train = temp_x_train[:ate_food_at_step]
+        temp_y_train = temp_y_train[:ate_food_at_step]
 
         if len(temp_x_train) >= time_steps:
             till_step = len(temp_x_train) - (len(temp_x_train) % time_steps)
