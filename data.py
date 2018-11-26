@@ -59,6 +59,13 @@ def generate_data(num_games, num_features, num_classes):
         score_list.append(agent.score)
         step_list.append(agent.step)
 
+    # Xn => Yn+t, where t = 5 time step
+    time_step = 1
+
+    x_train = x_train[:len(x_train) - time_step]
+    y_train = y_train[time_step:]
+
+    # TODO - edit show state (-time_step)
     # Show state
     print('_________________________________________________________________')
     print('Time:', time.time() - st)
@@ -75,7 +82,7 @@ def generate_data(num_games, num_features, num_classes):
     # Convert y label to onehot encoded
     y_train = onehot(y_train, num_classes)
 
-    x_train = numpy.array(x_train).reshape(-1, num_features, 1)
+    x_train = numpy.array(x_train).reshape(-1, time_step, num_features)
     y_train = numpy.array(y_train)
 
     return x_train, y_train

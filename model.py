@@ -10,17 +10,27 @@ from keras import backend as K
 def build_model(num_features, num_classes, learning_rate):
     model = Sequential()
 
-    model.add(Dense(32, activation='relu', input_shape=(num_features, 1)))
-    model.add(Dense(64, activation='relu'))
-    model.add(Dense(64, activation='relu'))
-
-    model.add(Flatten())
-
-    model.add(Dense(128, activation='relu'))
-    model.add(Dropout(0.5))
+    # model.add(LSTM(64, input_shape=(timesteps, features)))
+    model.add(LSTM(64, input_shape=(1, num_features), return_sequences=True))
+    # model.add(Dropout(0.5))
+    # model.add(LSTM(128))
+    model.add(Dense(32, activation='relu'))
     model.add(Dense(32, activation='relu'))
 
+    model.add(Flatten())
     model.add(Dense(num_classes, activation='softmax'))
+
+    # model.add(Dense(32, activation='relu', input_shape=(num_features, 1)))
+    # model.add(Dense(64, activation='relu'))
+    # model.add(Dense(64, activation='relu'))
+    #
+    # model.add(Flatten())
+    #
+    # model.add(Dense(128, activation='relu'))
+    # model.add(Dropout(0.5))
+    # model.add(Dense(32, activation='relu'))
+
+    # model.add(Dense(num_classes, activation='softmax'))
 
     # Optimizer
     # opt = keras.optimizers.Adadelta(lr=learning_rate)

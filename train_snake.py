@@ -112,13 +112,13 @@ def main():
     classes = ['Dead', 'Alive: Wrong Direction', 'Alive: Right Direction']
     num_classes = len(classes)
 
-    epochs = 10
+    epochs = 5
     batch_size = 128
     learning_rate = 0.01
 
     # Load Data
-    x_train, y_train = Data.generate_data(80000, num_features, num_classes)
-    x_valid, y_valid = Data.generate_data(16000, num_features, num_classes)
+    x_train, y_train = Data.generate_data(2000, num_features, num_classes)
+    x_valid, y_valid = Data.generate_data(400, num_features, num_classes)
 
     # Build model
     model = Model.build_model(num_features, num_classes, learning_rate)
