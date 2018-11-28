@@ -10,7 +10,11 @@ class Snake:
         self.moves = [[-1, 0],  # 0 - left
                       [0, -1],  # 1 - up
                       [1, 0],  # 2 - right
-                      [0, 1]]  # 3 - down
+                      [0, 1],  # 3 - down
+                      [0, 0]]  # 4 - idle
+        self.forbidden_moves = [[0, 2], [2, 0],
+                                [1, 3], [3, 1]]
+
         self.heading_direction = 1
 
         self.head_color = (0, 100, 0)
@@ -22,9 +26,12 @@ class Snake:
         # for i in range(2, 10):
         #     self.body.append([self.head[0], self.head[1] + i])
 
-    # Change direction with -1=left | 0=straight | +1=right
-    def change_direction(self, move_direction):
-        self.heading_direction = (self.heading_direction + move_direction) % len(self.moves)
+    # Change direction with 0-4 index
+    def change_direction(self, move_index):
+        move = [self.heading_direction, move_index]
+
+        if not (move_index == 4 or move in self.forbidden_moves):
+            self.heading_direction = move_index
 
     # Move snake
     def move(self):

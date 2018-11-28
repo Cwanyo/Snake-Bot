@@ -3,32 +3,43 @@ import numpy
 import keras
 from keras.utils import plot_model
 from keras.models import Sequential, Model, model_from_json
-from keras.layers import Dense, Dropout, Flatten, LSTM, Input, concatenate
+from keras.layers import Dense, Dropout, Flatten, BatchNormalization, Conv2D, MaxPooling2D
 from keras import backend as K
 
 
-def build_model(num_features, num_classes, learning_rate):
+def build_model(img_size, num_frames, num_classes, learning_rate):
     model = Sequential()
 
-    model.add(Dense(32, activation='relu', input_shape=(num_features, 1)))
-    model.add(Dense(64, activation='relu'))
-    model.add(Dense(64, activation='relu'))
+    # model.add(Conv2D(filters=32, kernel_size=(4, 4), strides=(1, 1), padding='same', activation='relu',
+    #                  input_shape=(img_size, img_size, num_frames)))
+    # model.add(BatchNormalization(axis=3))
+    #
+    # model.add(Conv2D(filters=64, kernel_size=(5, 5), strides=(2, 2), padding='same', activation='relu'))
+    # model.add(Conv2D(filters=64, kernel_size=(5, 5), strides=(2, 2), padding='same', activation='relu'))
+    # model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='same'))
+    #
+    # model.add(Flatten())
+    #
+    # model.add(Dense(256, activation='relu'))
+    #
+    # model.add(Dropout(0.5))
+    #
+    # model.add(Dense(128, activation='relu'))
 
+    model.add(Conv2D(16, 3, activation='relu', input_shape=(img_size, img_size, num_frames)))
+    model.add(Conv2D(32, 3, activation='relu'))
     model.add(Flatten())
+    model.add(Dense(256, activation='relu'))
 
-    model.add(Dense(128, activation='relu'))
-    model.add(Dropout(0.5))
-    model.add(Dense(32, activation='relu'))
-
-    model.add(Dense(num_classes, activation='softmax'))
+    model.add(Dense(num_classes))
 
     # Optimizer
     # opt = keras.optimizers.Adadelta(lr=learning_rate)
-    opt = keras.optimizers.SGD(lr=learning_rate, momentum=0.9, decay=0.0, nesterov=False)
+    # opt = keras.optimizers.SGD(lr=learning_rate, momentum=0.9, decay=0.0, nesterov=False)
+    opt = keras.optimizers.RMSprop(lr=learning_rate)
     # opt = keras.optimizers.Adam(lr=learning_rate)
 
-    model.compile(loss=keras.losses.categorical_crossentropy, optimizer=opt,
-                  metrics=['accuracy'])
+    model.compile(loss=keras.losses.mean_squared_error, optimizer=opt)
 
     return model
 
@@ -66,7 +77,7 @@ def get_model_memory_usage(batch_size, model):
     print('Approximately memory usage : {} gb'.format(gbytes))
 
 
-def save_model(model, classes, output_dir):
+def save_model(model, output_dir):
     print('Saving model details')
     # Save model config
     model_json = model.to_json()
@@ -78,10 +89,6 @@ def save_model(model, classes, output_dir):
 
     with open(output_dir + 'model_summary.txt', 'w') as f:
         model.summary(print_fn=lambda x: f.write(x + '\n'))
-
-    # Save labels
-    with open(output_dir + 'trained_labels.txt', 'w') as f:
-        f.write('\n'.join(classes) + '\n')
 
     print('Saving trained model')
     model.save_weights(output_dir + 'model_weights.h5')

@@ -3,8 +3,8 @@ import pygame
 from game.snake import Snake
 from game.food import Food
 
-WINDOW_WIDTH = 30  # 30
-WINDOW_HEIGHT = 30
+WINDOW_WIDTH = 10  # 30
+WINDOW_HEIGHT = 10
 PIXEL_SIZE = 20
 FPS = 10
 
@@ -27,10 +27,16 @@ def main():
                 break
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
-                    snake.change_direction(-1)
+                    snake.change_direction(0)
+                    break
+                elif event.key == pygame.K_UP:
+                    snake.change_direction(1)
                     break
                 elif event.key == pygame.K_RIGHT:
-                    snake.change_direction(+1)
+                    snake.change_direction(2)
+                    break
+                elif event.key == pygame.K_DOWN:
+                    snake.change_direction(3)
                     break
 
         snake.move()

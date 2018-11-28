@@ -11,24 +11,12 @@ from sklearn.metrics import confusion_matrix, classification_report
 from matplotlib import pyplot as plt
 import itertools
 
+from dqn import DQN
+
 from agent import Agent
 import data as Data
 import model as Model
 from test_snake import test_in_game
-
-
-def train(model, x_train, y_train, x_valid, y_valid, batch_size, epochs, log_dir):
-    # Use tensorboard
-    # cli => tensorboard --logdir files/training_logs
-    tensorboard = keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=0, write_graph=True,
-                                              batch_size=batch_size)
-
-    # Train
-    # NOTE* - The validation set is checked during training to monitor progress,
-    # and possibly for early stopping, but is never used for gradient descent.
-    # REF -> https://github.com/keras-team/keras/issues/1753
-    model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs, verbose=1,
-              validation_data=(x_valid, y_valid), callbacks=[tensorboard])
 
 
 def evaluate(model, classes, x_test, y_test, output_dir):
@@ -108,23 +96,34 @@ def main():
     log_dir = './files/training_logs/'
 
     # Hyper parameters
-    num_features = 5
-    classes = ['Dead', 'Alive: Wrong Direction', 'Alive: Right Direction']
-    num_classes = len(classes)
+    img_size = 12
+    num_frames = 4
+    actions = [[-1, 0],  # 0 - left
+               [0, -1],  # 1 - up
+               [1, 0],  # 2 - right
+               [0, 1],  # 3 - down
+               [0, 0]]  # 4 - idle
+    num_classes = len(actions)
 
-    epochs = 10
-    batch_size = 128
-    learning_rate = 0.01
-
-    # Load Data
-    x_train, y_train = Data.generate_data(80000, num_features, num_classes)
-    x_valid, y_valid = Data.generate_data(16000, num_features, num_classes)
+    # Number of games / epochs
+    episodes = 2000
+    # Exploration factor
+    epsilon = 1.0
+    # Discount factor
+    gamma = 0.8
+    batch_size = 64
+    # -1 is unlimited
+    memory_size = -1
+    learning_rate = 0.001
 
     # Build model
-    model = Model.build_model(num_features, num_classes, learning_rate)
+    model = Model.build_model(img_size, num_frames, num_classes, learning_rate)
 
     # View model summary
     model.summary()
+
+    # Create DQN Agent
+    dqn = DQN(model, memory_size, img_size, num_frames, actions)
 
     # Check memory needed during the training process (not accurate)
     Model.get_model_memory_usage(batch_size, model)
@@ -132,20 +131,17 @@ def main():
     # Get optimizer name
     opt_name = model.optimizer.__class__.__name__
     # Get folder name
-    hparam_str = make_hparam_string(opt_name, learning_rate, batch_size, epochs)
+    hparam_str = make_hparam_string(opt_name, learning_rate, batch_size, episodes)
     log_dir += hparam_str
     output_dir = log_dir + 'model/'
     # Create folder
     prepare_dir(output_dir)
 
     # Train the model
-    train(model, x_train, y_train, x_valid, y_valid, batch_size, epochs, log_dir)
-
-    # Evaluate the model
-    evaluate(model, classes, x_valid, y_valid, output_dir)
+    dqn.train(episodes, batch_size, gamma, epsilon)
 
     # Save the model
-    Model.save_model(model, classes, output_dir)
+    Model.save_model(model, output_dir)
 
     # Test on game
     # test_in_game(model, 1000, False, True, 200)

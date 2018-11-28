@@ -7,8 +7,8 @@ import pygame
 from game.snake import Snake
 from game.food import Food
 
-WINDOW_WIDTH = 20  # 30
-WINDOW_HEIGHT = 20
+WINDOW_WIDTH = 10  # 30
+WINDOW_HEIGHT = 10
 PIXEL_SIZE = 20
 
 
@@ -27,11 +27,16 @@ class Agent:
         # basic infos
         self.alive = True
         self.score = 0
+        self.pre_score = self.score
         self.step = 0
         # useful infos
         self.s_obstacles = self.get_surrounding_obstacles()
         self.food_angle = self.get_food_angle()
-        self.food_distance = self.get_food_distance()
+        self.pre_food_distance = 1
+        self.food_distance = 1
+        self.get_food_distance()
+        self.board = self.get_board()
+        self.reward = self.get_reward()
 
     def init_visualization(self):
         if self.visualization:
@@ -41,49 +46,15 @@ class Agent:
         else:
             return None, None
 
-    def get_random_move(self, random_n=10):
-
-        # real random move, 1/random_n
-        if random_n is not 0 and random.randint(1, random_n) == 1:
-            return random.randint(-1, 1)
-
-        s, a, d = self.get_state()
-        # random move depend on state
-        ops = []
-        # select move based on following the food angle and avoiding the obstacles
-        if not s[0] and a < 0:
-            ops.insert(-1, -1)
-        if not s[1] and a == 0:
-            ops.insert(-1, 0)
-        if not s[2] and a > 0:
-            ops.insert(-1, +1)
-
-        # if no option
-        if not ops:
-            # select move based on avoiding obstacles
-            if not s[0]:
-                ops.insert(-1, -1)
-            if not s[1]:
-                ops.insert(-1, 0)
-            if not s[2]:
-                ops.insert(-1, +1)
-
-            # again, if no option -> just die
-            if not ops:
-                return random.randint(-1, 1)
-            else:
-                return ops[random.randint(0, len(ops) - 1)]
-        else:
-            return ops[random.randint(0, len(ops) - 1)]
-
-    def next_state(self, move_direction):
+    def next_state(self, move_index):
         self.step += 1
         info = 'CodeID: {} | Step: {} | Score: {}'.format(self.code_id, self.step, self.score)
 
-        self.snake.change_direction(move_direction)
+        self.snake.change_direction(move_index)
         self.snake.move()
 
         if self.snake.collision_food(self.food.location):
+            self.pre_score = self.score
             self.score += 1
             self.food.state = False
 
@@ -112,7 +83,8 @@ class Agent:
         return self.get_state()
 
     def get_state(self):
-        return self.get_surrounding_obstacles(), self.get_food_angle(), self.get_food_distance()
+        return self.get_surrounding_obstacles(), self.get_food_angle(), self.get_food_distance(), \
+               self.get_board(), self.get_reward()
 
     def get_surrounding_obstacles(self):
         # check front
@@ -167,22 +139,76 @@ class Agent:
         dis = numpy.linalg.norm(head - food)
 
         # normalize distance to the range 0 - 1
+        self.pre_food_distance = self.food_distance
         self.food_distance = dis / max_dis
 
         return self.food_distance
 
+    def get_board(self):
+        # TODO - change values
+        # coordinate x,y are opposite to array => y,x
+        temp_board = [[0] * (WINDOW_WIDTH + 2) for i in range(WINDOW_HEIGHT + 2)]
+
+        # mark top & bottom wall
+        for i in range(len(temp_board[0])):
+            temp_board[0][i] = -10  # -10 - 1
+            temp_board[len(temp_board) - 1][i] = -10  # -10 - 1
+
+        # mark left and right wall
+        for i in range(len(temp_board)):
+            temp_board[i][0] = -10  # -10 - 1
+            temp_board[i][len(temp_board[0]) - 1] = -10  # -10 - 1
+
+        # mark snake
+        temp_board[int(self.snake.head[1]) + 1][int(self.snake.head[0]) + 1] = 5  # 5 - 1
+        for b in self.snake.body:
+            temp_board[int(b[1]) + 1][int(b[0]) + 1] = -10  # -10 - 1
+
+        # mark food
+        temp_board[int(self.food.location[1]) + 1][int(self.food.location[0]) + 1] = 10  # 10 - 0.5
+
+        self.board = temp_board
+
+        return self.board
+
+    def get_reward(self):
+        if not self.alive:
+            self.reward = -1
+        elif self.score > self.pre_score:
+            self.reward = self.score
+        else:
+            self.reward = 0
+
+        # TODO - add - for going wrong direction use pre_food_distance
+        # if not self.alive:
+        #     self.reward = -1
+        # elif self.score > self.pre_score:
+        #     self.reward = self.score
+        # elif self.food_distance > self.pre_food_distance:
+        #     self.reward = -0.25
+        # elif self.food_distance < self.pre_food_distance:
+        #     self.reward = 0.25
+        # else:
+        #     self.reward = 0
+
+        return self.reward
+
 
 # test
 def start_agent(code_id=0):
-    agent = Agent(code_id, True, False, 30)
+    agent = Agent(code_id, False, True, 30)
     s = agent.get_state()
 
     while agent.alive:
         # generate move
-        move = agent.get_random_move(5)
+        move = numpy.random.randint(len(agent.snake.moves))
 
         # show current state and move
-        print(s, move)
+        for r in s[3]:
+            for c in r:
+                print(c, end='\t')
+            print()
+        print(move)
         # pre_s = s
         s = agent.next_state(move)
 
