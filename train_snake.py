@@ -13,67 +13,10 @@ import itertools
 
 from dqn import DQN
 
-from agent import Agent
-import data as Data
 import model as Model
-from test_snake import test_in_game
 
-
-def evaluate(model, classes, x_test, y_test, output_dir):
-    print('_________________________________________________________________')
-    # Evaluate with testing data
-    evaluation = model.evaluate(x_test, y_test)
-
-    print('Summary: Loss over the testing dataset: %.2f, Accuracy: %.2f' % (evaluation[0], evaluation[1]))
-
-    # Get prediction from given x_test
-    y_pred = model.predict_classes(x_test)
-
-    cr = classification_report(numpy.argmax(y_test, axis=1), y_pred, target_names=classes)
-    # Get report
-    print(cr)
-
-    # Get confusion matrix
-    cm = confusion_matrix(numpy.argmax(y_test, axis=1), y_pred)
-    plot_confusion_matrix(cm, classes)
-
-    # Save evaluate files
-    plt.savefig(output_dir + 'confusion_matrix.jpg')
-
-    with open(output_dir + 'confusion_matrix.txt', 'w') as f:
-        f.write(numpy.array2string(cm, separator=', '))
-
-    with open(output_dir + 'classification_report.txt', 'w') as f:
-        f.write(cr)
-
-    print('=================================================================')
-
-
-def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues):
-    plt.imshow(cm, interpolation='nearest', cmap=cmap)
-    plt.title(title)
-    plt.colorbar()
-    tick_marks = numpy.arange(len(classes))
-    plt.xticks(tick_marks, classes, rotation=45)
-    plt.yticks(tick_marks, classes)
-
-    if normalize:
-        cm = cm.astype('float') / cm.sum(axis=1)[:, numpy.newaxis]
-        print('Normalized confusion matrix')
-    else:
-        print('Confusion matrix, without normalization')
-
-    print(cm)
-
-    thresh = cm.max() / 2.
-    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-        plt.text(j, i, cm[i, j],
-                 horizontalalignment='center',
-                 color='white' if cm[i, j] > thresh else 'black')
-
-    plt.tight_layout()
-    plt.ylabel('True label')
-    plt.xlabel('Predicted label')
+from keras import backend as K
+K.set_image_dim_ordering('th')
 
 
 def make_hparam_string(opt, learning_rate, batch_size, epochs):
@@ -106,9 +49,10 @@ def main():
     num_classes = len(actions)
 
     # Number of games / epochs
-    episodes = 2000
+    episodes = 10000
     # Exploration factor
-    epsilon = 1.0
+    epsilon = [1.0, 0.1]
+    epsilon_rate = 0.5
     # Discount factor
     gamma = 0.8
     batch_size = 64
@@ -138,16 +82,13 @@ def main():
     prepare_dir(output_dir)
 
     # Train the model
-    dqn.train(episodes, batch_size, gamma, epsilon)
+    dqn.train(episodes, batch_size, gamma, epsilon, epsilon_rate)
 
     # Save the model
     Model.save_model(model, output_dir)
 
     # Test on game
-    # test_in_game(model, 1000, False, True, 200)
-
-    # Visualize
-    # plt.show()
+    dqn.test_game(model, 1000)
 
     print('--end--')
 

@@ -3,8 +3,8 @@ import pygame
 from game.snake import Snake
 from game.food import Food
 
-WINDOW_WIDTH = 10  # 30
-WINDOW_HEIGHT = 10
+WINDOW_WIDTH = 20  # 30
+WINDOW_HEIGHT = 20
 PIXEL_SIZE = 20
 FPS = 10
 

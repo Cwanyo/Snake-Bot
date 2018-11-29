@@ -151,21 +151,21 @@ class Agent:
 
         # mark top & bottom wall
         for i in range(len(temp_board[0])):
-            temp_board[0][i] = -10  # -10 - 1
-            temp_board[len(temp_board) - 1][i] = -10  # -10 - 1
+            temp_board[0][i] = 1  # -10 - 1
+            temp_board[len(temp_board) - 1][i] = 1  # -10 - 1
 
         # mark left and right wall
         for i in range(len(temp_board)):
-            temp_board[i][0] = -10  # -10 - 1
-            temp_board[i][len(temp_board[0]) - 1] = -10  # -10 - 1
+            temp_board[i][0] = 1  # -10 - 1
+            temp_board[i][len(temp_board[0]) - 1] = 1  # -10 - 1
 
         # mark snake
-        temp_board[int(self.snake.head[1]) + 1][int(self.snake.head[0]) + 1] = 5  # 5 - 1
+        temp_board[int(self.snake.head[1]) + 1][int(self.snake.head[0]) + 1] = 1  # 5 - 1
         for b in self.snake.body:
-            temp_board[int(b[1]) + 1][int(b[0]) + 1] = -10  # -10 - 1
+            temp_board[int(b[1]) + 1][int(b[0]) + 1] = 1  # -10 - 1
 
         # mark food
-        temp_board[int(self.food.location[1]) + 1][int(self.food.location[0]) + 1] = 10  # 10 - 0.5
+        temp_board[int(self.food.location[1]) + 1][int(self.food.location[0]) + 1] = 0.5  # 10 - 0.5
 
         self.board = temp_board
 
@@ -175,22 +175,22 @@ class Agent:
         if not self.alive:
             self.reward = -1
         elif self.score > self.pre_score:
-            self.reward = self.score
+            self.reward = self.score + 3
         else:
             self.reward = 0
 
-        # TODO - add - for going wrong direction use pre_food_distance
+        # # TODO - add for going wrong direction use pre_food_distance
         # if not self.alive:
         #     self.reward = -1
         # elif self.score > self.pre_score:
-        #     self.reward = self.score
+        #     self.reward = self.score + 2
         # elif self.food_distance > self.pre_food_distance:
-        #     self.reward = -0.25
+        #     self.reward = -0.5
         # elif self.food_distance < self.pre_food_distance:
         #     self.reward = 0.25
         # else:
         #     self.reward = 0
-
+        #
         return self.reward
 
 
