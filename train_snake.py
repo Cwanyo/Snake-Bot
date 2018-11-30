@@ -16,6 +16,8 @@ from dqn import DQN
 import model as Model
 
 from keras import backend as K
+
+# (num_frames,img_size,img_size) format
 K.set_image_dim_ordering('th')
 
 
@@ -39,7 +41,9 @@ def main():
     log_dir = './files/training_logs/'
 
     # Hyper parameters
-    img_size = 12
+    # img_size = board_size + 2 , where 2 is the border padding
+    # TODO - change snake game board setting
+    img_size = 10 + 2
     num_frames = 4
     actions = [[-1, 0],  # 0 - left
                [0, -1],  # 1 - up
@@ -52,12 +56,12 @@ def main():
     episodes = 10000
     # Exploration factor
     epsilon = [1.0, 0.1]
-    epsilon_rate = 0.5
+    epsilon_rate = 0.7
     # Discount factor
     gamma = 0.8
-    batch_size = 64
+    batch_size = 256
     # -1 is unlimited
-    memory_size = -1
+    memory_size = 500000
     learning_rate = 0.001
 
     # Build model
@@ -65,9 +69,6 @@ def main():
 
     # View model summary
     model.summary()
-
-    # Create DQN Agent
-    dqn = DQN(model, memory_size, img_size, num_frames, actions)
 
     # Check memory needed during the training process (not accurate)
     Model.get_model_memory_usage(batch_size, model)
@@ -81,14 +82,17 @@ def main():
     # Create folder
     prepare_dir(output_dir)
 
+    # Create DQN Agent
+    dqn = DQN(model, memory_size, img_size, num_frames, actions, log_dir)
+
     # Train the model
     dqn.train(episodes, batch_size, gamma, epsilon, epsilon_rate)
 
-    # Save the model
+    # Save model
     Model.save_model(model, output_dir)
 
     # Test on game
-    dqn.test_game(model, 1000)
+    # dqn.test_game(model, 1000)
 
     print('--end--')
 

@@ -13,7 +13,7 @@ def build_model(img_size, num_frames, num_classes, learning_rate):
     # model.add(Conv2D(filters=32, kernel_size=(4, 4), strides=(1, 1), padding='same', activation='relu',
     #                  input_shape=(num_frames, img_size, img_size)))
     # model.add(BatchNormalization(axis=1))
-    # #
+    #
     # model.add(Conv2D(filters=64, kernel_size=(5, 5), strides=(2, 2), padding='same', activation='relu'))
     # model.add(Conv2D(filters=64, kernel_size=(5, 5), strides=(2, 2), padding='same', activation='relu'))
     # model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='same'))
@@ -30,13 +30,16 @@ def build_model(img_size, num_frames, num_classes, learning_rate):
     model.add(Conv2D(32, (3, 3), activation='relu'))
     model.add(Flatten())
     model.add(Dense(256, activation='relu'))
+    model.add(Dense(128, activation='relu'))
+    # model.add(Dense(256, activation='relu', kernel_initializer='zeros'))
+    # model.add(Dense(128, activation='relu', kernel_initializer='zeros'))
 
     model.add(Dense(num_classes))
 
     # Optimizer
     # opt = keras.optimizers.Adadelta(lr=learning_rate)
     # opt = keras.optimizers.SGD(lr=learning_rate, momentum=0.9, decay=0.0, nesterov=False)
-    opt = keras.optimizers.RMSprop()
+    opt = keras.optimizers.RMSprop(lr=learning_rate)
     # opt = keras.optimizers.Adam(lr=learning_rate)
 
     model.compile(loss=keras.losses.mean_squared_error, optimizer=opt)
