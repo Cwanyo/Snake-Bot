@@ -7,16 +7,18 @@ import pygame
 from game.snake import Snake
 from game.food import Food
 
-WINDOW_WIDTH = 10  # 30
-WINDOW_HEIGHT = 10
-PIXEL_SIZE = 20
-
 
 class Agent:
-    def __init__(self, code_id, log=False, visualization=False, fps=60):
+    def __init__(self, code_id, log=False, visualization=False, fps=60, board_size=(10, 10, 20)):
         self.code_id = code_id
-        self.snake = Snake(WINDOW_WIDTH, WINDOW_HEIGHT, PIXEL_SIZE, WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2)
-        self.food = Food(WINDOW_WIDTH, WINDOW_HEIGHT, PIXEL_SIZE)
+
+        self.window_width = board_size[0]
+        self.window_height = board_size[1]
+        self.pixel_size = board_size[2]
+
+        self.snake = Snake(self.window_width, self.window_height, self.pixel_size, self.window_width / 2,
+                           self.window_height / 2)
+        self.food = Food(self.window_width, self.window_height, self.pixel_size)
         self.food.spawn(self.snake)
 
         self.log = log
@@ -40,7 +42,8 @@ class Agent:
 
     def init_visualization(self):
         if self.visualization:
-            window = pygame.display.set_mode((WINDOW_WIDTH * PIXEL_SIZE, WINDOW_HEIGHT * PIXEL_SIZE))
+            window = pygame.display.set_mode(
+                (self.window_width * self.pixel_size, self.window_height * self.pixel_size))
             fps = pygame.time.Clock()
             return window, fps
         else:
@@ -64,7 +67,7 @@ class Agent:
             info += ' >> Game Over!'
             self.alive = False
 
-        if self.snake.get_length() == WINDOW_WIDTH * WINDOW_HEIGHT:
+        if self.snake.get_length() == self.window_width * self.window_height:
             info += ' >> Win!'
             self.alive = False
 
@@ -102,8 +105,8 @@ class Agent:
 
         # check wall
         for i in range(0, len(s_locations)):
-            if s_locations[i][0] < 0 or s_locations[i][0] >= WINDOW_WIDTH \
-                    or s_locations[i][1] < 0 or s_locations[i][1] >= WINDOW_HEIGHT:
+            if s_locations[i][0] < 0 or s_locations[i][0] >= self.window_width \
+                    or s_locations[i][1] < 0 or s_locations[i][1] >= self.window_height:
                 self.s_obstacles[i] = 1
 
         # check body
@@ -135,7 +138,7 @@ class Agent:
         head = numpy.array(self.snake.head)
         food = numpy.array(self.food.location)
 
-        max_dis = numpy.linalg.norm(numpy.array([0, 0]) - numpy.array([WINDOW_WIDTH - 1, WINDOW_HEIGHT - 1]))
+        max_dis = numpy.linalg.norm(numpy.array([0, 0]) - numpy.array([self.window_width - 1, self.window_height - 1]))
         dis = numpy.linalg.norm(head - food)
 
         # normalize distance to the range 0 - 1
@@ -147,25 +150,52 @@ class Agent:
     def get_board(self):
         # TODO - change values
         # coordinate x,y are opposite to array => y,x
-        temp_board = [[0] * (WINDOW_WIDTH + 2) for i in range(WINDOW_HEIGHT + 2)]
+        temp_board = [[0] * (self.window_width + 2) for i in range(self.window_height + 2)]
 
         # mark top & bottom wall
         for i in range(len(temp_board[0])):
-            temp_board[0][i] = 1  # -10 - 1
-            temp_board[len(temp_board) - 1][i] = 1  # -10 - 1
+            temp_board[0][i] = 1
+            temp_board[len(temp_board) - 1][i] = 1
 
-        # mark left and right wall
+            # mark left and right wall
         for i in range(len(temp_board)):
-            temp_board[i][0] = 1  # -10 - 1
-            temp_board[i][len(temp_board[0]) - 1] = 1  # -10 - 1
+            temp_board[i][0] = 1
+            temp_board[i][len(temp_board[0]) - 1] = 1
 
-        # mark snake
-        temp_board[int(self.snake.head[1]) + 1][int(self.snake.head[0]) + 1] = 1  # 5 - 1
+            # mark snake
+        temp_board[int(self.snake.head[1]) + 1][int(self.snake.head[0]) + 1] = 1
         for b in self.snake.body:
-            temp_board[int(b[1]) + 1][int(b[0]) + 1] = 1  # -10 - 1
+            temp_board[int(b[1]) + 1][int(b[0]) + 1] = 1
 
-        # mark food
-        temp_board[int(self.food.location[1]) + 1][int(self.food.location[0]) + 1] = 0.5  # 10 - 0.5
+            # mark food
+        temp_board[int(self.food.location[1]) + 1][int(self.food.location[0]) + 1] = 0.5
+
+        self.board = temp_board
+
+        return self.board
+
+    def get_board_v1(self):
+        # TODO - change values
+        # coordinate x,y are opposite to array => y,x
+        temp_board = [[0] * (self.window_width + 2) for i in range(self.window_height + 2)]
+
+        # mark top & bottom wall
+        for i in range(len(temp_board[0])):
+            temp_board[0][i] = -1
+            temp_board[len(temp_board) - 1][i] = -1
+
+            # mark left and right wall
+        for i in range(len(temp_board)):
+            temp_board[i][0] = -1
+            temp_board[i][len(temp_board[0]) - 1] = -1
+
+            # mark snake
+        temp_board[int(self.snake.head[1]) + 1][int(self.snake.head[0]) + 1] = 0.5
+        for b in self.snake.body:
+            temp_board[int(b[1]) + 1][int(b[0]) + 1] = -1
+
+            # mark food
+        temp_board[int(self.food.location[1]) + 1][int(self.food.location[0]) + 1] = 1
 
         self.board = temp_board
 
@@ -175,22 +205,25 @@ class Agent:
         if not self.alive:
             self.reward = -1
         elif self.score > self.pre_score:
-            self.reward = self.score + 3
+            self.reward = len(self.snake.head) + len(self.snake.body)
         else:
             self.reward = 0
 
+        return self.reward
+
+    def get_reward_v1(self):
         # # TODO - add for going wrong direction use pre_food_distance
-        # if not self.alive:
-        #     self.reward = -1
-        # elif self.score > self.pre_score:
-        #     self.reward = self.score + 2
-        # elif self.food_distance > self.pre_food_distance:
-        #     self.reward = -0.5
-        # elif self.food_distance < self.pre_food_distance:
-        #     self.reward = 0.25
-        # else:
-        #     self.reward = 0
-        #
+        if not self.alive:
+            self.reward = -1
+        elif self.score > self.pre_score:
+            self.reward = 1
+        elif self.food_distance > self.pre_food_distance:
+            self.reward = -0.5
+        elif self.food_distance < self.pre_food_distance:
+            self.reward = 0.1
+        else:
+            self.reward = 0
+
         return self.reward
 
 
