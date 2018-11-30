@@ -53,7 +53,7 @@ def main():
     num_classes = len(actions)
 
     # Number of games / epochs
-    episodes = 10000
+    episodes = 50000
     # Exploration factor
     epsilon = [1.0, 0.1]
     epsilon_rate = 0.7
@@ -61,7 +61,7 @@ def main():
     gamma = 0.8
     batch_size = 256
     # -1 is unlimited
-    memory_size = 500000
+    memory_size = 1000000
     learning_rate = 0.001
 
     # Build model

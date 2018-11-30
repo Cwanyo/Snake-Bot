@@ -132,11 +132,11 @@ class DQN:
 
             # Write loss scalar on tensorboard
             self.writer.add_summary(tf.Summary(value=[
-                tf.Summary.Value(tag="loss", simple_value=loss),
+                tf.Summary.Value(tag='loss', simple_value=loss),
             ]), e)
 
             self.writer.add_summary(tf.Summary(value=[
-                tf.Summary.Value(tag="eat", simple_value=eat_count),
+                tf.Summary.Value(tag='eat_count', simple_value=eat_count),
             ]), e)
 
             # Test in game at every N episode
@@ -145,7 +145,7 @@ class DQN:
                 test_score.append([e, avg_score])
 
                 self.writer.add_summary(tf.Summary(value=[
-                    tf.Summary.Value(tag="avg_game_score_by_episode", simple_value=avg_score),
+                    tf.Summary.Value(tag='avg_game_score_by_episode', simple_value=avg_score),
                 ]), e)
 
             # TODO - save weight as checkpoint
