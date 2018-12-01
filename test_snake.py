@@ -28,7 +28,7 @@ def main():
     dqn = DQN(model, memory_size, img_size, num_frames, actions)
 
     # Test on game
-    dqn.test_game(10, True, 60)
+    dqn.test_game(10, True, 30, True)
 
     print('--end--')
 
