@@ -23,9 +23,12 @@ class ExperienceReplay:
         self.memory.append(numpy.concatenate(
             [state.flatten(), numpy.array(action_index).flatten(), numpy.array(reward).flatten(),
              state_next.flatten(), 1 * numpy.array(game_over).flatten()]))
+
+        if not len(self.memory) % 10000:
+            print('-- Memory:', len(self.memory))
         if not self.memory_filled and len(self.memory) == self.memory_size:
             self.memory_filled = True
-            print('--Memory filled')
+            print('-- Memory: filled')
 
     def get_batch(self, model, batch_size, gamma=0.9):
         if self.fast:
