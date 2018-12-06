@@ -1,3 +1,4 @@
+import os
 import numpy
 
 import keras
@@ -10,37 +11,34 @@ from keras import backend as K
 def build_model(img_size, num_frames, num_classes, learning_rate):
     model = Sequential()
 
-    # model.add(Conv2D(filters=32, kernel_size=(4, 4), strides=(1, 1), padding='same', activation='relu',
-    #                  input_shape=(num_frames, img_size, img_size)))
-    # model.add(BatchNormalization(axis=1))
-    #
-    # model.add(Conv2D(filters=64, kernel_size=(5, 5), strides=(2, 2), padding='same', activation='relu'))
-    # model.add(Conv2D(filters=64, kernel_size=(5, 5), strides=(2, 2), padding='same', activation='relu'))
-    # model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='same'))
-    #
-    # model.add(Flatten())
-    #
-    # model.add(Dense(256, activation='relu'))
-    #
-    # model.add(Dropout(0.5))
-    #
-    # model.add(Dense(128, activation='relu'))
+    model.add(Conv2D(filters=16, kernel_size=(3, 3), strides=(1, 1), padding='same', activation='relu',
+                     input_shape=(num_frames, img_size, img_size)))
 
-    model.add(Conv2D(16, (3, 3), activation='relu', input_shape=(num_frames, img_size, img_size)))
-    model.add(Conv2D(32, (3, 3), activation='relu'))
+    model.add(Conv2D(filters=32, kernel_size=(3, 3), strides=(1, 1), padding='same', activation='relu'))
+
+    model.add(Conv2D(filters=64, kernel_size=(5, 5), strides=(2, 2), padding='same', activation='relu'))
+    model.add(Conv2D(filters=64, kernel_size=(5, 5), strides=(2, 2), padding='same', activation='relu'))
+
     model.add(Flatten())
+
     model.add(Dense(256, activation='relu'))
     model.add(Dense(128, activation='relu'))
-    # model.add(Dense(256, activation='relu', kernel_initializer='zeros'))
-    # model.add(Dense(128, activation='relu', kernel_initializer='zeros'))
+
+    # model.add(Conv2D(16, (3, 3), activation='relu', input_shape=(num_frames, img_size, img_size)))
+    # model.add(Conv2D(32, (3, 3), activation='relu'))
+    # model.add(Flatten())
+    # model.add(Dense(256, activation='relu'))
+    # model.add(Dense(128, activation='relu'))
+    # # model.add(Dense(256, activation='relu', kernel_initializer='zeros'))
+    # # model.add(Dense(128, activation='relu', kernel_initializer='zeros'))
 
     model.add(Dense(num_classes))
 
     # Optimizer
     # opt = keras.optimizers.Adadelta(lr=learning_rate)
     # opt = keras.optimizers.SGD(lr=learning_rate, momentum=0.9, decay=0.0, nesterov=False)
-    opt = keras.optimizers.RMSprop(lr=learning_rate)
-    # opt = keras.optimizers.Adam(lr=learning_rate)
+    # opt = keras.optimizers.RMSprop(lr=learning_rate)
+    opt = keras.optimizers.Adam(lr=learning_rate)
 
     model.compile(loss=keras.losses.mean_squared_error, optimizer=opt)
 
@@ -95,3 +93,20 @@ def save_model(model, output_dir):
 
     print('Saving trained model')
     model.save_weights(output_dir + 'model_weights.h5')
+
+
+def save_checkpoint(model, output_dir, checkpoint):
+    print('Saving checkpoint', checkpoint)
+
+    output_dir += 'checkpoints/'
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        print('Created directory ' + output_dir)
+
+    # Save model config
+    model_json = model.to_json()
+    with open(output_dir + 'model_config.json', 'w') as f:
+        f.write(model_json)
+
+    model.save_weights(output_dir + f'checkpoint-{checkpoint}.h5')

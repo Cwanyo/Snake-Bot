@@ -5,16 +5,21 @@ import matplotlib.pyplot as plt
 
 import tensorflow as tf
 
+import model as Model
 from agent import Agent
 from memory import ExperienceReplay
+from dual_memory import DualExperienceReplay
 
 
 class DQN:
-    def __init__(self, model, memory_size, img_size, num_frames, actions, output_dir=''):
+    def __init__(self, model, target_model, tau, memory_size, img_size, num_frames, actions, output_dir=''):
         self.model = model
+        self.target_model = target_model
+        self.tau = tau
         # slow
         # self.memory = deque() if memory_size == -1 else deque(maxlen=memory_size)
-        self.memory = ExperienceReplay(memory_size)
+        # self.memory = ExperienceReplay(memory_size)
+        self.memory = DualExperienceReplay(memory_size[0], memory_size[1], 0, True)
         self.img_size = img_size
         self.num_frames = num_frames
         self.actions = actions
@@ -46,15 +51,32 @@ class DQN:
     def clear_frames(self):
         self.frames = None
 
-    def train(self, episodes, batch_size, gamma, epsilon, epsilon_rate, test_at_episode=100, test_num_game=10):
+    def update_target_model(self):
+        # Copy weights from model to target_model
+        self.target_model.set_weights(self.model.get_weights())
+        print('-- update_target_model')
 
-        delta = ((epsilon[0] - epsilon[1]) / (episodes * epsilon_rate))
+    def train(self, episodes, batch_size, gamma, epsilon, epsilon_rate,
+              explore_exploit_ratio, explore_exploit_rate,
+              test_at_episode=100, test_num_game=10, save_checkpoint=-1):
+
+        # Init epsilon rate
+        delta_epsilon = ((epsilon[0] - epsilon[1]) / (episodes * epsilon_rate))
         final_epsilon = epsilon[1]
         epsilon = epsilon[0]
+
+        # Init explore exploit rate of memory
+        delta_exploit_ratio = \
+            ((explore_exploit_ratio[0] - explore_exploit_ratio[1]) / (episodes * explore_exploit_rate))
+        final_exploit_ratio = explore_exploit_ratio[1]
+        explore_exploit_ratio = explore_exploit_ratio[0]
 
         eat_count = 0
 
         test_score = []
+
+        # Sync both model by update the target weights
+        self.update_target_model()
 
         for e in range(episodes):
             agent = Agent(e, board_size=(self.img_size - 2, self.img_size - 2, 20))
@@ -73,7 +95,12 @@ class DQN:
                     action_index = int(numpy.argmax(q_state[0]))
                 else:
                     # Explore
-                    action_index = numpy.random.randint(self.num_actions)
+                    # action_index = numpy.random.randint(self.num_actions)
+                    action_index = agent.get_random_legal_action()
+
+                    # Log - if loop occur
+                    # if epsilon <= final_epsilon:
+                    #     print('--> random action')
 
                 _, _, _, board, reward = agent.next_state(action_index)
 
@@ -83,7 +110,9 @@ class DQN:
                 # self.record_memory(state, action_index, reward, next_state, agent.alive)
                 state = next_state
 
-                batch = self.memory.get_batch(model=self.model, batch_size=batch_size, gamma=gamma)
+                batch = self.memory.get_batch(model=self.model, target_model=self.target_model,
+                                              batch_size=batch_size, explore_exploit_ratio=explore_exploit_ratio,
+                                              gamma=gamma)
                 if batch:
                     inputs, targets = batch
                     loss += self.model.train_on_batch(inputs, targets)
@@ -117,9 +146,17 @@ class DQN:
                 #
                 #     loss += self.model.train_on_batch(x, y)
 
+            # Update the target weights
+            if not e % self.tau:
+                self.update_target_model()
+
             # Tune epsilon
             if epsilon > final_epsilon:
-                epsilon -= delta
+                epsilon -= delta_epsilon
+
+            # Adjust dual memory ratio
+            if explore_exploit_ratio > final_exploit_ratio:
+                explore_exploit_ratio -= delta_exploit_ratio
 
             # Log
             if agent.score:
@@ -130,7 +167,7 @@ class DQN:
                   'Step {} | Score {} | Eat {}'.format(e + 1, episodes, loss, epsilon, agent.step, agent.score,
                                                        eat_count))
 
-            # Write loss scalar on tensorboard
+            # Write scalars on tensorboard
             self.writer.add_summary(tf.Summary(value=[
                 tf.Summary.Value(tag='loss', simple_value=loss),
             ]), e)
@@ -139,16 +176,30 @@ class DQN:
                 tf.Summary.Value(tag='eat_count', simple_value=eat_count),
             ]), e)
 
+            self.writer.add_summary(tf.Summary(value=[
+                tf.Summary.Value(tag='epsilon', simple_value=epsilon),
+            ]), e)
+
+            self.writer.add_summary(tf.Summary(value=[
+                tf.Summary.Value(tag='explore_exploit_ratio', simple_value=explore_exploit_ratio),
+            ]), e)
+
             # Test in game at every N episode
             if not e % test_at_episode:
-                avg_score = self.test_game(episodes=test_num_game)
+                avg_score, avg_loop_detected = self.test_game(episodes=test_num_game)
                 test_score.append([e, avg_score])
 
                 self.writer.add_summary(tf.Summary(value=[
                     tf.Summary.Value(tag='avg_game_score_by_episode', simple_value=avg_score),
                 ]), e)
 
-            # TODO - save weight as checkpoint
+                self.writer.add_summary(tf.Summary(value=[
+                    tf.Summary.Value(tag='avg_loop_detected_by_episode', simple_value=avg_loop_detected),
+                ]), e)
+
+            # Save weight as checkpoint
+            if save_checkpoint != -1 and not e % save_checkpoint:
+                Model.save_checkpoint(self.model, self.output_dir, e)
 
         # Plot test game score
         self.plot_test_game_score(test_score, test_at_episode, test_num_game)
@@ -178,23 +229,28 @@ class DQN:
             agent = Agent(e, False, visualization, game_speed, board_size=(self.img_size - 2, self.img_size - 2, 20))
 
             s, _, _, board, _ = agent.get_state()
+            self.clear_frames()
+            state = self.get_frames(board)
 
             # Log
             pre_s = None
             pre_h = None
-
-            state = self.get_frames(board)
 
             while agent.alive:
                 if loop_detected and random_on_loop:
                     loop_detected = False
                     step_per_food = 0
                     # Escape looping forever (might move to wrong direction and die)
-                    action_index = numpy.random.randint(self.num_actions)
+                    # action_index = numpy.random.randint(self.num_actions)
+                    action_index = agent.get_random_legal_action()
                 else:
                     # use prediction
                     # q_state = self.model.predict(state.reshape(-1, self.img_size, self.img_size, self.num_frames))
                     q_state = self.model.predict(state.reshape(-1, self.num_frames, self.img_size, self.img_size))
+
+                    # filter legal action from predicted q value
+                    q_state = agent.filter_legal_action(q_state)
+
                     action_index = int(numpy.argmax(q_state[0]))
 
                 pre_s = s
@@ -227,10 +283,11 @@ class DQN:
         print('------------------------------------------------------')
         print('Total Games:', episodes)
         print('Total Steps:', sum(step_list))
-        print('Loop detected', num_loop_detected)
+        print('Total Loop Detected', num_loop_detected)
+        print('Avg Loop Detected', num_loop_detected / episodes)
         print('Avg Steps:', sum(step_list) / float(len(step_list)))
         print('Max Score:', max(score_list))
         print('Avg Score:', sum(score_list) / float(len(score_list)))
         print('______________________________________________________')
 
-        return sum(score_list) / float(len(score_list))
+        return sum(score_list) / float(len(score_list)), num_loop_detected / episodes

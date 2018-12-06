@@ -16,8 +16,11 @@ class Agent:
         self.window_height = board_size[1]
         self.pixel_size = board_size[2]
 
-        self.snake = Snake(self.window_width, self.window_height, self.pixel_size, self.window_width / 2,
-                           self.window_height / 2)
+        # random spawn
+        init_x = numpy.random.randint(self.window_width)
+        init_y = numpy.random.randint(self.window_height - 1)  # 1 is body size
+        self.snake = Snake(self.window_width, self.window_height, self.pixel_size,
+                           init_x, init_y)
         self.food = Food(self.window_width, self.window_height, self.pixel_size)
         self.food.spawn(self.snake)
 
@@ -38,7 +41,7 @@ class Agent:
         self.food_distance = 1
         self.get_food_distance()
         self.board = self.get_board()
-        self.reward = self.get_reward()
+        self.reward = self.get_reward_v1()
 
     def init_visualization(self):
         if self.visualization:
@@ -49,6 +52,25 @@ class Agent:
         else:
             return None, None
 
+    def get_random_legal_action(self):
+        action_index = numpy.random.randint(len(self.snake.moves))
+        move = [self.snake.heading_direction, action_index]
+
+        while move in self.snake.forbidden_moves:
+            action_index = numpy.random.randint(len(self.snake.moves))
+            move = [self.snake.heading_direction, action_index]
+
+        return action_index
+
+    def filter_legal_action(self, q_value):
+        curr_heading = self.snake.heading_direction
+
+        for i in range(len(q_value[0])):
+            if [curr_heading, i] in self.snake.forbidden_moves:
+                q_value[0][i] = -1
+
+        return q_value
+
     def next_state(self, move_index):
         self.step += 1
         info = 'CodeID: {} | Step: {} | Score: {}'.format(self.code_id, self.step, self.score)
@@ -56,8 +78,8 @@ class Agent:
         self.snake.change_direction(move_index)
         self.snake.move()
 
+        self.pre_score = self.score
         if self.snake.collision_food(self.food.location):
-            self.pre_score = self.score
             self.score += 1
             self.food.state = False
 
@@ -87,7 +109,7 @@ class Agent:
 
     def get_state(self):
         return self.get_surrounding_obstacles(), self.get_food_angle(), self.get_food_distance(), \
-               self.get_board(), self.get_reward()
+               self.get_board(), self.get_reward_v1()
 
     def get_surrounding_obstacles(self):
         # check front
@@ -217,10 +239,11 @@ class Agent:
             self.reward = -1
         elif self.score > self.pre_score:
             self.reward = 1
-        elif self.food_distance > self.pre_food_distance:
-            self.reward = -0.5
-        elif self.food_distance < self.pre_food_distance:
-            self.reward = 0.1
+        elif self.food_distance != self.pre_food_distance:
+            snake_len = len(self.snake.head) + len(self.snake.body)
+            d1 = self.pre_food_distance
+            d2 = self.food_distance
+            self.reward = math.log((snake_len + d1) / (snake_len + d2), snake_len)
         else:
             self.reward = 0
 
@@ -234,7 +257,7 @@ def start_agent(code_id=0):
 
     while agent.alive:
         # generate move
-        move = numpy.random.randint(len(agent.snake.moves))
+        move = agent.get_random_legal_action()
 
         # show current state and move
         for r in s[3]:
