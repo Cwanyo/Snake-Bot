@@ -31,9 +31,9 @@ class ExperienceReplay:
             self.memory_filled = True
             print('-- Memory: filled')
 
-    def get_batch(self, model, target_model, batch_size, gamma=0.9):
+    def get_batch(self, model, batch_size, gamma=0.9):
         if self.fast:
-            return self.get_batch_fast(model, target_model, batch_size, gamma)
+            return self.get_batch_fast(model, batch_size, gamma)
         if len(self.memory) < batch_size:
             batch_size = len(self.memory)
 
@@ -52,19 +52,21 @@ class ExperienceReplay:
         state = state.reshape((batch_size,) + self.input_shape)
         next_state = next_state.reshape((batch_size,) + self.input_shape)
 
-        q_next_state = numpy.max(target_model.predict(next_state), axis=1).repeat(num_actions).reshape(
-            (batch_size, num_actions))
+        x = numpy.concatenate([state, next_state], axis=0)
+        y = model.predict(x)
+
+        q_state = numpy.max(y[batch_size:], axis=1).repeat(num_actions).reshape((batch_size, num_actions))
 
         delta = numpy.zeros((batch_size, num_actions))
         action_index = numpy.cast['int'](action_index)
         delta[numpy.arange(batch_size), action_index] = 1
-        targets = (1 - delta) * model.predict(state) + delta * (reward + gamma * (1 - game_over) * q_next_state)
+        targets = (1 - delta) * y[:batch_size] + delta * (reward + gamma * (1 - game_over) * q_state)
         return state, targets
 
     def reset_memory(self):
         self.memory.clear()
 
-    def set_batch_function(self, model, target_model, input_shape, batch_size, num_actions, gamma):
+    def set_batch_function(self, model, input_shape, batch_size, num_actions, gamma):
         input_dim = numpy.prod(input_shape)
         samples = K.placeholder(shape=(batch_size, input_dim * 2 + 3))
 
@@ -82,7 +84,10 @@ class ExperienceReplay:
         state = K.reshape(state, (batch_size,) + input_shape)
         next_state = K.reshape(next_state, (batch_size,) + input_shape)
 
-        q_next_state = K.max(target_model(next_state), axis=1)
+        x = K.concatenate([state, next_state], axis=0)
+        y = model(x)
+
+        q_next_state = K.max(y[batch_size:], axis=1)
         q_next_state = K.reshape(q_next_state, (batch_size, 1))
         q_next_state = K.repeat(q_next_state, num_actions)
         q_next_state = K.reshape(q_next_state, (batch_size, num_actions))
@@ -90,15 +95,14 @@ class ExperienceReplay:
         delta = K.reshape(K.one_hot(K.reshape(K.cast(action_index, "int32"), (-1, 1)), num_actions),
                           (batch_size, num_actions))
 
-        targets = (1 - delta) * model(state) + delta * (reward + gamma * (1 - game_over) * q_next_state)
+        targets = (1 - delta) * y[:batch_size] + delta * (reward + gamma * (1 - game_over) * q_next_state)
         self.batch_function = K.function(inputs=[samples], outputs=[state, targets])
 
-    def get_batch_fast(self, model, target_model, batch_size, gamma):
+    def get_batch_fast(self, model, batch_size, gamma):
         if len(self.memory) < batch_size:
             return None
         samples = numpy.array(sample(self.memory, batch_size))
         if not hasattr(self, 'batch_function') or self.batch_function is None:
-            self.set_batch_function(model, target_model, self.input_shape, batch_size,
-                                    model.get_output_shape_at(0)[-1], gamma)
+            self.set_batch_function(model, self.input_shape, batch_size, model.get_output_shape_at(0)[-1], gamma)
         state, targets = self.batch_function([samples])
         return state, targets

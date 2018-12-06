@@ -9,7 +9,7 @@ import model as Model
 def main():
     print('--start--')
     # change dir path here
-    time_path = 'sb_5'
+    time_path = 'sb_4'
     model = Model.load_model(time_path)
 
     # Hyper parameters
@@ -29,7 +29,7 @@ def main():
     memory_size = [-1, -1]
 
     # Create DQN Agent
-    dqn = DQN(model, model, 0, memory_size, img_size, num_frames, actions)
+    dqn = DQN(model, memory_size, img_size, num_frames, actions)
 
     # Test on game
     dqn.test_game(10, True, 30, True)

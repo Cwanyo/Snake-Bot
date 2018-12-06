@@ -8,18 +8,13 @@ import tensorflow as tf
 import model as Model
 from agent import Agent
 from memory import ExperienceReplay
-from dual_memory import DualExperienceReplay
 
 
 class DQN:
-    def __init__(self, model, target_model, tau, memory_size, img_size, num_frames, actions, output_dir=''):
+    def __init__(self, model, memory_size, img_size, num_frames, actions, output_dir=''):
         self.model = model
-        self.target_model = target_model
-        self.tau = tau
-        # slow
-        # self.memory = deque() if memory_size == -1 else deque(maxlen=memory_size)
-        # self.memory = ExperienceReplay(memory_size)
-        self.memory = DualExperienceReplay(memory_size[0], memory_size[1], 0, True)
+
+        self.memory = ExperienceReplay(memory_size)
         self.img_size = img_size
         self.num_frames = num_frames
         self.actions = actions
@@ -29,16 +24,6 @@ class DQN:
         # Log
         self.output_dir = output_dir
         self.writer = tf.summary.FileWriter(output_dir)
-
-    # slow
-    # def record_memory(self, state, action_index, reward, next_state, alive):
-    #     self.memory.append((state, action_index, reward, next_state, alive))
-    #
-    # def recall_memory(self, batch_size):
-    #     if len(self.memory) >= batch_size:
-    #         return sample(self.memory, batch_size)
-    #     else:
-    #         return None
 
     def get_frames(self, board):
         if self.frames is None:
@@ -51,13 +36,7 @@ class DQN:
     def clear_frames(self):
         self.frames = None
 
-    def update_target_model(self):
-        # Copy weights from model to target_model
-        self.target_model.set_weights(self.model.get_weights())
-        print('-- update_target_model')
-
     def train(self, episodes, batch_size, gamma, epsilon, epsilon_rate,
-              explore_exploit_ratio, explore_exploit_rate,
               test_at_episode=100, test_num_game=10, save_checkpoint=-1):
 
         # Init epsilon rate
@@ -65,18 +44,9 @@ class DQN:
         final_epsilon = epsilon[1]
         epsilon = epsilon[0]
 
-        # Init explore exploit rate of memory
-        delta_exploit_ratio = \
-            ((explore_exploit_ratio[0] - explore_exploit_ratio[1]) / (episodes * explore_exploit_rate))
-        final_exploit_ratio = explore_exploit_ratio[1]
-        explore_exploit_ratio = explore_exploit_ratio[0]
-
         eat_count = 0
 
         test_score = []
-
-        # Sync both model by update the target weights
-        self.update_target_model()
 
         for e in range(episodes):
             agent = Agent(e, board_size=(self.img_size - 2, self.img_size - 2, 20))
@@ -110,53 +80,15 @@ class DQN:
                 # self.record_memory(state, action_index, reward, next_state, agent.alive)
                 state = next_state
 
-                batch = self.memory.get_batch(model=self.model, target_model=self.target_model,
-                                              batch_size=batch_size, explore_exploit_ratio=explore_exploit_ratio,
-                                              gamma=gamma)
+                batch = self.memory.get_batch(model=self.model, batch_size=batch_size, gamma=gamma)
+
                 if batch:
                     inputs, targets = batch
                     loss += self.model.train_on_batch(inputs, targets)
 
-                # slow
-                # batch = self.recall_memory(batch_size)
-                # if batch:
-                #     x = []
-                #     y = []
-                #
-                #     for state, action_index, reward, next_state, alive in batch:
-                #         # q_state = self.model.predict(
-                #         #     state.reshape(-1, self.img_size, self.img_size, self.num_frames)).flatten()
-                #         q_state = self.model.predict(
-                #             state.reshape(-1, self.num_frames, self.img_size, self.img_size)).flatten()
-                #         if reward < 0:
-                #             # Q[action_index] ~> negative value
-                #             q_state[action_index] = reward
-                #         else:
-                #             # q_next_state = self.model.predict(
-                #             #     next_state.reshape(-1, self.img_size, self.img_size, self.num_frames))
-                #             q_next_state = self.model.predict(
-                #                 next_state.reshape(-1, self.num_frames, self.img_size, self.img_size))
-                #             q_state[action_index] = reward + gamma * numpy.max(q_next_state)
-                #         x.append(state)
-                #         y.append(q_state)
-                #
-                #     # x = numpy.array(x).reshape(-1, self.img_size, self.img_size, self.num_frames)
-                #     x = numpy.array(x).reshape(-1, self.num_frames, self.img_size, self.img_size)
-                #     y = numpy.array(y)
-                #
-                #     loss += self.model.train_on_batch(x, y)
-
-            # Update the target weights
-            if not e % self.tau:
-                self.update_target_model()
-
             # Tune epsilon
             if epsilon > final_epsilon:
                 epsilon -= delta_epsilon
-
-            # Adjust dual memory ratio
-            if explore_exploit_ratio > final_exploit_ratio:
-                explore_exploit_ratio -= delta_exploit_ratio
 
             # Log
             if agent.score:
@@ -178,10 +110,6 @@ class DQN:
 
             self.writer.add_summary(tf.Summary(value=[
                 tf.Summary.Value(tag='epsilon', simple_value=epsilon),
-            ]), e)
-
-            self.writer.add_summary(tf.Summary(value=[
-                tf.Summary.Value(tag='explore_exploit_ratio', simple_value=explore_exploit_ratio),
             ]), e)
 
             # Test in game at every N episode
