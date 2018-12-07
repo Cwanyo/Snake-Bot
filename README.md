@@ -2,7 +2,9 @@
 
 ```bash
 Input layer 
-1: board state [4 x 12 x 12] (data_format = channels_first)
+1: board state [4 x 12 x 12]
+* data_format = channels_first => (num_frames, img_size, img_size)
+
 
 where the values in each pixel are:
     wall and snake’s body = 1
