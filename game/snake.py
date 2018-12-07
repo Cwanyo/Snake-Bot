@@ -2,7 +2,7 @@ import pygame
 
 
 class Snake:
-    def __init__(self, window_width, window_height, pixel_size, init_x, init_y):
+    def __init__(self, window_width, window_height, pixel_size, init_x, init_y, body_size=1):
         self.window_width = window_width
         self.window_height = window_height
         self.pixel_size = pixel_size
@@ -21,10 +21,10 @@ class Snake:
         self.body_color = (0, 200, 0)
 
         self.head = [init_x, init_y]
-        self.body = [[self.head[0], self.head[1] + 1]]
+        self.body = []
         # Generate snake's body
-        # for i in range(2, 10):
-        #     self.body.append([self.head[0], self.head[1] + i])
+        for i in range(1, body_size+1):
+            self.body.append([self.head[0], self.head[1] + i])
 
     # Change direction with 0-4 index
     def change_direction(self, move_index):

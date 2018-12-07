@@ -8,7 +8,7 @@ from game.food import Food
 
 
 class Agent:
-    def __init__(self, code_id, log=False, visualization=False, fps=60, board_size=(10, 10, 20)):
+    def __init__(self, code_id, log=False, visualization=False, fps=60, board_size=(10, 10, 20), random_body=False):
         self.code_id = code_id
 
         self.window_width = board_size[0]
@@ -16,10 +16,12 @@ class Agent:
         self.pixel_size = board_size[2]
 
         # random spawn
+        body_size = numpy.random.randint(1, self.window_height - 1) if random_body else 1
         init_x = numpy.random.randint(self.window_width)
-        init_y = numpy.random.randint(self.window_height - 1)  # 1 is body size
+        init_y = numpy.random.randint(self.window_height - body_size)  # 1 is body size
+
         self.snake = Snake(self.window_width, self.window_height, self.pixel_size,
-                           init_x, init_y)
+                           init_x, init_y, body_size)
         self.food = Food(self.window_width, self.window_height, self.pixel_size)
         self.food.spawn(self.snake)
 
@@ -257,7 +259,7 @@ class Agent:
 
 # test
 def start_agent(code_id=0):
-    agent = Agent(code_id, False, True, 30)
+    agent = Agent(code_id, False, True, 10)
     s = agent.get_state()
 
     while agent.alive:
