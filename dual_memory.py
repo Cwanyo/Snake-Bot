@@ -106,6 +106,16 @@ class DualExperienceReplay:
     def reset_exploit_memory(self):
         self.exploit_memory.clear()
 
+    def remove_explore_memory(self, old_percent):
+        i = int(len(self.explore_memory) * old_percent)
+        for _ in range(i):
+            self.explore_memory.popleft()
+
+    def remove_exploit_memory(self, old_percent):
+        i = int(len(self.exploit_memory) * old_percent)
+        for _ in range(i):
+            self.exploit_memory.popleft()
+
     def set_batch_function(self, model, target_model, input_shape, batch_size, num_actions, gamma):
         input_dim = numpy.prod(input_shape)
         samples = K.placeholder(shape=(batch_size, input_dim * 2 + 3))
