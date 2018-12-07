@@ -120,46 +120,30 @@ class DQN:
                                                        eat_count))
 
             # Write scalars on tensorboard
-            self.writer.add_summary(tf.Summary(value=[
-                tf.Summary.Value(tag='loss', simple_value=loss),
-            ]), e)
+            self.write_scalar('loss', loss, e)
 
-            self.writer.add_summary(tf.Summary(value=[
-                tf.Summary.Value(tag='eat_count', simple_value=eat_count),
-            ]), e)
+            self.write_scalar('eat_count', eat_count, e)
 
-            self.writer.add_summary(tf.Summary(value=[
-                tf.Summary.Value(tag='epsilon', simple_value=epsilon),
-            ]), e)
+            self.write_scalar('epsilon', epsilon, e)
 
-            self.writer.add_summary(tf.Summary(value=[
-                tf.Summary.Value(tag='explore_exploit_ratio', simple_value=explore_exploit_ratio),
-            ]), e)
+            self.write_scalar('explore_exploit_ratio', explore_exploit_ratio, e)
 
-            self.writer.add_summary(tf.Summary(value=[
-                tf.Summary.Value(tag='explore_memory_size', simple_value=len(self.memory.explore_memory)),
-            ]), e)
+            self.write_scalar('explore_memory_size', len(self.memory.explore_memory), e)
 
-            self.writer.add_summary(tf.Summary(value=[
-                tf.Summary.Value(tag='exploit_memory_size', simple_value=len(self.memory.exploit_memory)),
-            ]), e)
+            self.write_scalar('exploit_memory_size', len(self.memory.exploit_memory), e)
 
             # Test in game at every N episode
             if not e % test_at_episode:
-                avg_score, avg_loop_detected, avg_bad_dead_detected = self.test_game(episodes=test_num_game)
+                avg_score, avg_step, avg_loop_detected, avg_bad_dead_detected = self.test_game(episodes=test_num_game)
                 test_score.append([e, avg_score])
 
-                self.writer.add_summary(tf.Summary(value=[
-                    tf.Summary.Value(tag='avg_game_score_by_episode', simple_value=avg_score),
-                ]), e)
+                self.write_scalar('avg_game_score_by_episode', avg_score, e)
 
-                self.writer.add_summary(tf.Summary(value=[
-                    tf.Summary.Value(tag='avg_loop_detected_by_episode', simple_value=avg_loop_detected),
-                ]), e)
+                self.write_scalar('avg_game_step_by_episode', avg_step, e)
 
-                self.writer.add_summary(tf.Summary(value=[
-                    tf.Summary.Value(tag='avg_bad_dead_detected_by_episode', simple_value=avg_bad_dead_detected),
-                ]), e)
+                self.write_scalar('avg_loop_detected_by_episode', avg_loop_detected, e)
+
+                self.write_scalar('avg_bad_dead_detected_by_episode', avg_bad_dead_detected, e)
 
             # Save weight as checkpoint
             if save_checkpoint != -1 and not e % save_checkpoint:
@@ -167,6 +151,11 @@ class DQN:
 
         # Plot test game score
         self.plot_test_game_score(test_score, test_at_episode, test_num_game)
+
+    def write_scalar(self, tag, value, e):
+        self.writer.add_summary(tf.Summary(value=[
+            tf.Summary.Value(tag=tag, simple_value=value),
+        ]), e)
 
     def plot_test_game_score(self, test_score, test_at_episode, test_num_game):
         plt.plot([x[0] for x in test_score], [y[1] for y in test_score], '-o')
@@ -248,16 +237,21 @@ class DQN:
 
             print(e, pre_s, pre_h, agent.snake.heading_direction, agent.score)
 
+        avg_score = sum(score_list) / float(len(score_list))
+        avg_step = sum(step_list) / float(len(step_list))
+        avg_loop_detected = num_loop_detected / episodes
+        avg_bad_dead_detected = num_bad_dead_detected / episodes
+
         print('------------------------------------------------------')
         print('Total Games:', episodes)
         print('Total Steps:', sum(step_list))
         print('Total Loop Detected', num_loop_detected)
-        print('Avg Loop Detected', num_loop_detected / episodes)
+        print('Avg Loop Detected', avg_loop_detected)
         print('Total Bad Dead Detected', num_bad_dead_detected)
-        print('Avg Bad Dead Detected', num_bad_dead_detected / episodes)
-        print('Avg Steps:', sum(step_list) / float(len(step_list)))
+        print('Avg Bad Dead Detected', avg_bad_dead_detected)
+        print('Avg Steps:', avg_step)
         print('Max Score:', max(score_list))
-        print('Avg Score:', sum(score_list) / float(len(score_list)))
+        print('Avg Score:', avg_score)
         print('______________________________________________________')
 
-        return sum(score_list) / float(len(score_list)), num_loop_detected / episodes, num_bad_dead_detected / episodes
+        return avg_score, avg_step, avg_loop_detected, avg_bad_dead_detected
