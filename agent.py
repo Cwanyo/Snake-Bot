@@ -1,7 +1,6 @@
 import time
 import numpy
 import math
-import random
 import pygame
 
 from game.snake import Snake
@@ -39,6 +38,7 @@ class Agent:
         self.food_angle = self.get_food_angle()
         self.pre_food_distance = 1
         self.food_distance = 1
+        self.legal_action = True
         self.get_food_distance()
         self.board = self.get_board()
         self.reward = self.get_reward_v1()
@@ -75,7 +75,7 @@ class Agent:
         self.step += 1
         info = 'CodeID: {} | Step: {} | Score: {}'.format(self.code_id, self.step, self.score)
 
-        self.snake.change_direction(move_index)
+        self.legal_action = self.snake.change_direction(move_index)
         self.snake.move()
 
         self.pre_score = self.score
@@ -234,12 +234,17 @@ class Agent:
         return self.reward
 
     def get_reward_v1(self):
-        # # TODO - add for going wrong direction use pre_food_distance
         if not self.alive:
+            # if snake is dead
+            self.reward = -1
+        elif not self.legal_action:
+            # if action is illegal
             self.reward = -1
         elif self.score > self.pre_score:
+            # if scored
             self.reward = 1
         elif self.food_distance != self.pre_food_distance:
+            # if distance from s to s1 is change
             snake_len = len(self.snake.head) + len(self.snake.body)
             d1 = self.pre_food_distance
             d2 = self.food_distance
@@ -257,7 +262,8 @@ def start_agent(code_id=0):
 
     while agent.alive:
         # generate move
-        move = agent.get_random_legal_action()
+        move = numpy.random.randint(len(agent.snake.moves))
+        # move = agent.get_random_legal_action()
 
         # show current state and move
         for r in s[3]:
@@ -267,6 +273,9 @@ def start_agent(code_id=0):
         print(move)
         # pre_s = s
         s = agent.next_state(move)
+
+        print(s)
+        print('--')
 
         # Freeze
         # if not agent.alive:

@@ -1,6 +1,4 @@
 import numpy
-from collections import deque
-from random import sample
 import matplotlib.pyplot as plt
 
 import tensorflow as tf
@@ -16,9 +14,6 @@ class DQN:
         self.model = model
         self.target_model = target_model
         self.tau = tau
-        # slow
-        # self.memory = deque() if memory_size == -1 else deque(maxlen=memory_size)
-        # self.memory = ExperienceReplay(memory_size)
         self.memory = DualExperienceReplay(memory_size[0], memory_size[1], 0, True)
         self.img_size = img_size
         self.num_frames = num_frames
@@ -29,16 +24,6 @@ class DQN:
         # Log
         self.output_dir = output_dir
         self.writer = tf.summary.FileWriter(output_dir)
-
-    # slow
-    # def record_memory(self, state, action_index, reward, next_state, alive):
-    #     self.memory.append((state, action_index, reward, next_state, alive))
-    #
-    # def recall_memory(self, batch_size):
-    #     if len(self.memory) >= batch_size:
-    #         return sample(self.memory, batch_size)
-    #     else:
-    #         return None
 
     def get_frames(self, board):
         if self.frames is None:
@@ -95,8 +80,8 @@ class DQN:
                     action_index = int(numpy.argmax(q_state[0]))
                 else:
                     # Explore
-                    # action_index = numpy.random.randint(self.num_actions)
-                    action_index = agent.get_random_legal_action()
+                    action_index = numpy.random.randint(self.num_actions)
+                    # action_index = agent.get_random_legal_action()
 
                     # Log - if loop occur
                     # if epsilon <= final_epsilon:
@@ -116,35 +101,6 @@ class DQN:
                 if batch:
                     inputs, targets = batch
                     loss += self.model.train_on_batch(inputs, targets)
-
-                # slow
-                # batch = self.recall_memory(batch_size)
-                # if batch:
-                #     x = []
-                #     y = []
-                #
-                #     for state, action_index, reward, next_state, alive in batch:
-                #         # q_state = self.model.predict(
-                #         #     state.reshape(-1, self.img_size, self.img_size, self.num_frames)).flatten()
-                #         q_state = self.model.predict(
-                #             state.reshape(-1, self.num_frames, self.img_size, self.img_size)).flatten()
-                #         if reward < 0:
-                #             # Q[action_index] ~> negative value
-                #             q_state[action_index] = reward
-                #         else:
-                #             # q_next_state = self.model.predict(
-                #             #     next_state.reshape(-1, self.img_size, self.img_size, self.num_frames))
-                #             q_next_state = self.model.predict(
-                #                 next_state.reshape(-1, self.num_frames, self.img_size, self.img_size))
-                #             q_state[action_index] = reward + gamma * numpy.max(q_next_state)
-                #         x.append(state)
-                #         y.append(q_state)
-                #
-                #     # x = numpy.array(x).reshape(-1, self.img_size, self.img_size, self.num_frames)
-                #     x = numpy.array(x).reshape(-1, self.num_frames, self.img_size, self.img_size)
-                #     y = numpy.array(y)
-                #
-                #     loss += self.model.train_on_batch(x, y)
 
             # Update the target weights
             if not e % self.tau:
@@ -241,15 +197,15 @@ class DQN:
                     loop_detected = False
                     step_per_food = 0
                     # Escape looping forever (might move to wrong direction and die)
-                    # action_index = numpy.random.randint(self.num_actions)
-                    action_index = agent.get_random_legal_action()
+                    action_index = numpy.random.randint(self.num_actions)
+                    # action_index = agent.get_random_legal_action()
                 else:
                     # use prediction
                     # q_state = self.model.predict(state.reshape(-1, self.img_size, self.img_size, self.num_frames))
                     q_state = self.model.predict(state.reshape(-1, self.num_frames, self.img_size, self.img_size))
 
                     # filter legal action from predicted q value
-                    q_state = agent.filter_legal_action(q_state)
+                    # q_state = agent.filter_legal_action(q_state)
 
                     action_index = int(numpy.argmax(q_state[0]))
 

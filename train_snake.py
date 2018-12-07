@@ -1,15 +1,5 @@
 import os
 import time
-import random
-import operator
-import numpy
-
-import keras
-
-from sklearn.metrics import confusion_matrix, classification_report
-
-from matplotlib import pyplot as plt
-import itertools
 
 from dqn import DQN
 
@@ -45,12 +35,6 @@ def main():
     # TODO - change snake game board setting
     img_size = 10 + 2
     num_frames = 4
-    # TODO - test
-    # actions = [[-1, 0],  # 0 - left
-    #            [0, -1],  # 1 - up
-    #            [1, 0],  # 2 - right
-    #            [0, 1],  # 3 - down
-    #            [0, 0]]  # 4 - idle
 
     actions = [[-1, 0],  # 0 - left
                [0, -1],  # 1 - up
@@ -62,16 +46,16 @@ def main():
     # Number of games / epochs
     episodes = 50000
     # Exploration factor
-    epsilon = [1.0, 0.2]
-    epsilon_rate = 0.6  # ex: 0.8 means reach lowest at 80% of episodes
+    epsilon = [1.0, 0.1]
+    epsilon_rate = 0.5  # ex: 0.8 means reach lowest at 80% of episodes
     # Discount factor
     gamma = 0.90
     batch_size = 256
     # -1 is unlimited
     # memory_size = 200000  # took around 2 gb
     memory_size = [200000, 200000]  # took around 4 gb, 2gb each
-    explore_exploit_ratio = [0.8, 0.5]  # ex: 1.0 means 100% of batch size will be explore
-    explore_exploit_rate = 0.6  # ex: 0.8 means reach lowest at 80% of episodes
+    explore_exploit_ratio = [0.9, 0.5]  # ex: 1.0 means 100% of batch size will be explore
+    explore_exploit_rate = 0.5  # ex: 0.8 means reach lowest at 80% of episodes
     learning_rate = 0.001
 
     # Test model on game
