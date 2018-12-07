@@ -88,7 +88,6 @@ class DQN:
                 next_state = self.get_frames(board)
                 transition = [state, action_index, reward, next_state, not agent.alive]
                 self.memory.remember(*transition)
-                # self.record_memory(state, action_index, reward, next_state, agent.alive)
                 state = next_state
 
                 batch = self.memory.get_batch(model=self.model, target_model=self.target_model,
