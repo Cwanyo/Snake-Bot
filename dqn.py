@@ -83,10 +83,6 @@ class DQN:
                     action_index = numpy.random.randint(self.num_actions)
                     # action_index = agent.get_random_legal_action()
 
-                    # Log - if loop occur
-                    # if epsilon <= final_epsilon:
-                    #     print('--> random action')
-
                 _, _, _, board, reward = agent.next_state(action_index)
 
                 next_state = self.get_frames(board)
@@ -140,9 +136,17 @@ class DQN:
                 tf.Summary.Value(tag='explore_exploit_ratio', simple_value=explore_exploit_ratio),
             ]), e)
 
+            self.writer.add_summary(tf.Summary(value=[
+                tf.Summary.Value(tag='explore_memory_size', simple_value=len(self.memory.explore_memory)),
+            ]), e)
+
+            self.writer.add_summary(tf.Summary(value=[
+                tf.Summary.Value(tag='exploit_memory_size', simple_value=len(self.memory.exploit_memory)),
+            ]), e)
+
             # Test in game at every N episode
             if not e % test_at_episode:
-                avg_score, avg_loop_detected = self.test_game(episodes=test_num_game)
+                avg_score, avg_loop_detected, avg_bad_dead_detected = self.test_game(episodes=test_num_game)
                 test_score.append([e, avg_score])
 
                 self.writer.add_summary(tf.Summary(value=[
@@ -151,6 +155,10 @@ class DQN:
 
                 self.writer.add_summary(tf.Summary(value=[
                     tf.Summary.Value(tag='avg_loop_detected_by_episode', simple_value=avg_loop_detected),
+                ]), e)
+
+                self.writer.add_summary(tf.Summary(value=[
+                    tf.Summary.Value(tag='avg_bad_dead_detected_by_episode', simple_value=avg_bad_dead_detected),
                 ]), e)
 
             # Save weight as checkpoint
@@ -174,6 +182,7 @@ class DQN:
         score_list = []
         step_list = []
         num_loop_detected = 0
+        num_bad_dead_detected = 0
 
         for e in range(episodes):
             # Handle snake loop forever
@@ -234,6 +243,9 @@ class DQN:
             score_list.append(agent.score)
             step_list.append(agent.step)
 
+            if sum(pre_s) != 3:
+                num_bad_dead_detected += 1
+
             print(e, pre_s, pre_h, agent.snake.heading_direction, agent.score)
 
         print('------------------------------------------------------')
@@ -241,9 +253,11 @@ class DQN:
         print('Total Steps:', sum(step_list))
         print('Total Loop Detected', num_loop_detected)
         print('Avg Loop Detected', num_loop_detected / episodes)
+        print('Total Bad Dead Detected', num_bad_dead_detected)
+        print('Avg Bad Dead Detected', num_bad_dead_detected / episodes)
         print('Avg Steps:', sum(step_list) / float(len(step_list)))
         print('Max Score:', max(score_list))
         print('Avg Score:', sum(score_list) / float(len(score_list)))
         print('______________________________________________________')
 
-        return sum(score_list) / float(len(score_list)), num_loop_detected / episodes
+        return sum(score_list) / float(len(score_list)), num_loop_detected / episodes, num_bad_dead_detected / episodes
