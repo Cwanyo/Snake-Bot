@@ -1,22 +1,10 @@
 import os
 import time
-import random
-import operator
-import numpy
-
-import keras
-
-from sklearn.metrics import confusion_matrix, classification_report
-
-from matplotlib import pyplot as plt
-import itertools
 
 from dqn import DQN
-
 import model as Model
 
 from keras import backend as K
-
 # (num_frames,img_size,img_size) format
 K.set_image_dim_ordering('th')
 
@@ -45,12 +33,6 @@ def main():
     # TODO - change snake game board setting
     img_size = 10 + 2
     num_frames = 4
-    # TODO - test
-    # actions = [[-1, 0],  # 0 - left
-    #            [0, -1],  # 1 - up
-    #            [1, 0],  # 2 - right
-    #            [0, 1],  # 3 - down
-    #            [0, 0]]  # 4 - idle
 
     actions = [[-1, 0],  # 0 - left
                [0, -1],  # 1 - up

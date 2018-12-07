@@ -3,8 +3,8 @@ import numpy
 
 import keras
 from keras.utils import plot_model
-from keras.models import Sequential, Model, model_from_json
-from keras.layers import Dense, Dropout, Flatten, BatchNormalization, Conv2D, MaxPooling2D
+from keras.models import Sequential, model_from_json
+from keras.layers import Dense, Flatten, Conv2D
 from keras import backend as K
 
 

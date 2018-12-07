@@ -1,6 +1,4 @@
 import numpy
-from collections import deque
-from random import sample
 import matplotlib.pyplot as plt
 
 import tensorflow as tf
@@ -65,8 +63,8 @@ class DQN:
                     action_index = int(numpy.argmax(q_state[0]))
                 else:
                     # Explore
-                    # action_index = numpy.random.randint(self.num_actions)
-                    action_index = agent.get_random_legal_action()
+                    action_index = numpy.random.randint(self.num_actions)
+                    # action_index = agent.get_random_legal_action()
 
                     # Log - if loop occur
                     # if epsilon <= final_epsilon:
@@ -169,15 +167,15 @@ class DQN:
                     loop_detected = False
                     step_per_food = 0
                     # Escape looping forever (might move to wrong direction and die)
-                    # action_index = numpy.random.randint(self.num_actions)
-                    action_index = agent.get_random_legal_action()
+                    action_index = numpy.random.randint(self.num_actions)
+                    # action_index = agent.get_random_legal_action()
                 else:
                     # use prediction
                     # q_state = self.model.predict(state.reshape(-1, self.img_size, self.img_size, self.num_frames))
                     q_state = self.model.predict(state.reshape(-1, self.num_frames, self.img_size, self.img_size))
 
                     # filter legal action from predicted q value
-                    q_state = agent.filter_legal_action(q_state)
+                    # q_state = agent.filter_legal_action(q_state)
 
                     action_index = int(numpy.argmax(q_state[0]))
 

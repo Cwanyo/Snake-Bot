@@ -7,13 +7,6 @@ class Snake:
         self.window_height = window_height
         self.pixel_size = pixel_size
 
-        # TODO - test
-        # self.moves = [[-1, 0],  # 0 - left
-        #               [0, -1],  # 1 - up
-        #               [1, 0],  # 2 - right
-        #               [0, 1],  # 3 - down
-        #               [0, 0]]  # 4 - idle
-
         self.moves = [[-1, 0],  # 0 - left
                       [0, -1],  # 1 - up
                       [1, 0],  # 2 - right
@@ -37,12 +30,11 @@ class Snake:
     def change_direction(self, move_index):
         move = [self.heading_direction, move_index]
 
-        # TODO - test
-        # if not (move_index == 4 or move in self.forbidden_moves):
-        #     self.heading_direction = move_index
-
         if not (move in self.forbidden_moves):
             self.heading_direction = move_index
+            return True
+        else:
+            return False
 
     # Move snake
     def move(self):
