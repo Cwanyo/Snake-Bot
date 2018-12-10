@@ -45,15 +45,19 @@ def build_model(img_size, num_frames, num_classes, learning_rate):
     return model
 
 
-def load_model(time_path):
-    path = './files/training_logs/' + time_path + '/model'
+def load_model(time_path, check_point=-1):
+    path = './files/training_logs/' + time_path
+
+    path += '/model' if check_point == -1 else '/checkpoints'
 
     # Load json and create the model
     with open(path + '/model_config.json', 'r') as f:
         model = model_from_json(f.read())
 
     # Load weights into the new model
-    model.load_weights(path + '/model_weights.h5')
+    path += '/model_weights.h5' if check_point == -1 else '/checkpoint-' + str(check_point) + '.h5'
+
+    model.load_weights(path)
     print('Loaded model from disk')
 
     return model
