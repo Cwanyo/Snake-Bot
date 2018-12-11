@@ -228,8 +228,11 @@ class Agent:
     def get_reward(self):
         if not self.alive:
             self.reward = -1
+        elif not self.legal_action:
+            self.reward = -1
         elif self.score > self.pre_score:
-            self.reward = len(self.snake.head) + len(self.snake.body)
+            # self.reward = len(self.snake.head) + len(self.snake.body
+            self.reward = 1
         else:
             self.reward = 0
 

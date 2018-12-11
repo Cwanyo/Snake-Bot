@@ -63,6 +63,8 @@ class DQN:
         # Sync both model by update the target weights
         self.update_target_model()
 
+        remove_memory = False
+
         for e in range(episodes):
             agent = Agent(e, board_size=(self.img_size - 2, self.img_size - 2, 20))
 
@@ -108,6 +110,14 @@ class DQN:
             # Adjust dual memory ratio
             if explore_exploit_ratio > final_exploit_ratio:
                 explore_exploit_ratio -= delta_exploit_ratio
+
+            # Remove memory
+            if not remove_memory and explore_exploit_ratio <= final_exploit_ratio:
+                remove_memory = True
+                # remove the old memory
+                self.memory.remove_explore_memory(0.5)
+                self.memory.remove_exploit_memory(0.5)
+                print('--remove old memory')
 
             # Log
             if agent.score:
@@ -234,7 +244,7 @@ class DQN:
             if sum(pre_s) != 3:
                 num_bad_dead_detected += 1
 
-            print(e, pre_s, pre_h, agent.snake.heading_direction, agent.score)
+            print(e, pre_s, pre_h, agent.snake.heading_direction, agent.score, agent.step)
 
         avg_score = sum(score_list) / float(len(score_list))
         avg_step = sum(step_list) / float(len(step_list))

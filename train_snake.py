@@ -47,15 +47,15 @@ def main():
     episodes = 50000
     # Exploration factor
     epsilon = [1.0, 0.1]
-    epsilon_rate = 0.5  # ex: 0.8 means reach lowest at 80% of episodes
+    epsilon_rate = 0.4  # ex: 0.8 means reach lowest at 80% of episodes
     # Discount factor
     gamma = 0.90
-    batch_size = 256
+    batch_size = 64
     # -1 is unlimited
     # memory_size = 200000  # took around 2 gb
-    memory_size = [200000, 200000]  # took around 4 gb, 2gb each
+    memory_size = [150000, 150000]  # took around 4 gb, 2gb each
     explore_exploit_ratio = [0.9, 0.5]  # ex: 1.0 means 100% of batch size will be explore
-    explore_exploit_rate = 0.5  # ex: 0.8 means reach lowest at 80% of episodes
+    explore_exploit_rate = 0.4  # ex: 0.8 means reach lowest at 80% of episodes
     learning_rate = 0.001
 
     # Test model on game
