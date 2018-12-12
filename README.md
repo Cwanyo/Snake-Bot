@@ -21,7 +21,7 @@ Output layer (linear regression - q values)
 4: move down
 ```
 
-The sample video of the actual gameplay is [here](https://youtu.be/CT7K99dArhA).
+The sample video of the actual gameplay is [here](https://youtu.be/uMVjgmqYhzs).
 
 ### Investigate the changes with TensorBoard
 

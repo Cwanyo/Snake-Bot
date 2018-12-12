@@ -48,7 +48,7 @@ def main():
     epsilon_rate = 0.5  # ex: 0.8 means reach lowest at 80% of episodes
     # Discount factor
     gamma = 0.90
-    batch_size = 256
+    batch_size = 64
     # -1 is unlimited
     memory_size = 200000  # took around 2 gb
     learning_rate = 0.001
